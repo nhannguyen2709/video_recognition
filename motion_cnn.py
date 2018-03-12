@@ -81,7 +81,7 @@ class Motion_CNN():
     def build_model(self):
         print('==> Build model and setup loss and optimizer')
         #build model
-        self.model = resnet50(pretrained= True, channel=self.channel).cuda()
+        self.model = resnet101(pretrained= True, channel=self.channel).cuda()
         #print self.model
         #Loss function and optimizer
         self.criterion = nn.CrossEntropyLoss().cuda()
@@ -173,11 +173,11 @@ class Motion_CNN():
             end = time.time()
         
         info = {'Epoch':[self.epoch],
-                'Batch Time':[round(batch_time.avg,3)],
-                'Data Time':[round(data_time.avg,3)],
-                'Loss':[round(losses.avg,5)],
-                'Prec@1':[round(top1.avg,4)],
-                'Prec@5':[round(top5.avg,4)],
+                'Batch Time':[batch_time.avg],
+                'Data Time':[data_time.avg],
+                'Loss':[losses.avg],
+                'Prec@1':[top1.avg],
+                'Prec@5':[top5.avg],
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
         record_info(info, 'record/motion/opf_train.csv','train')
@@ -220,10 +220,10 @@ class Motion_CNN():
         #Frame to video level accuracy
         video_top1, video_top5, video_loss = self.frame2_video_level_accuracy()
         info = {'Epoch':[self.epoch],
-                'Batch Time':[round(batch_time.avg,3)],
-                'Loss':[round(video_loss,5)],
-                'Prec@1':[round(video_top1,3)],
-                'Prec@5':[round(video_top5,3)]
+                'Batch Time':[batch_time.avg],
+                'Loss':[video_loss],
+                'Prec@1':[video_top1],
+                'Prec@5':[video_top5]
                 }
         record_info(info, 'record/motion/opf_test.csv','test')
         return video_top1, video_loss
@@ -233,7 +233,7 @@ class Motion_CNN():
         correct = 0
         video_level_preds = np.zeros((len(self.dic_video_level_preds),101))
         video_level_labels = np.zeros(len(self.dic_video_level_preds))
-        ii=0
+        ii = 0
         for key in sorted(self.dic_video_level_preds.keys()):
             name = key.split('-',1)[0]
 
@@ -242,9 +242,9 @@ class Motion_CNN():
                 
             video_level_preds[ii,:] = preds
             video_level_labels[ii] = label
-            ii+=1         
+            ii += 1         
             if np.argmax(preds) == (label):
-                correct+=1
+                correct += 1
 
         #top1 top5
         video_level_labels = torch.from_numpy(video_level_labels).long()
