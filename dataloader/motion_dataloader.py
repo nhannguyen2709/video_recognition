@@ -146,7 +146,7 @@ class Motion_DataLoader():
             transforms.Resize([224,224]),
             transforms.ToTensor(),
             ]))
-        print('==> Training data :{}, {} videos', (len(training_set), training_set[1][0].size()))
+        print('==> Training data: {}, {} videos'.format(len(training_set), training_set[1][0].size()))
 
         train_loader = DataLoader(
             dataset=training_set, 
@@ -165,7 +165,7 @@ class Motion_DataLoader():
             transforms.Resize([224,224]),
             transforms.ToTensor(),
             ]))
-        print('==> Validation data :{}, {} frames', (len(validation_set), validation_set[1][1].size()))
+        print('==> Validation data: {}, {} frames'.format(len(validation_set), validation_set[1][1].size()))
         #print validation_set[1]
 
         val_loader = DataLoader(

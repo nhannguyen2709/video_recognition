@@ -127,8 +127,8 @@ class spatial_dataloader():
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
                 ]))
-        print '==> Training data :',len(training_set),'frames'
-        print training_set[1][0]['img1'].size()
+        print('==> Training data: {} frames'.format(len(training_set)))
+        print(training_set[1][0]['img1'].size())
 
         train_loader = DataLoader(
             dataset=training_set, 
@@ -144,8 +144,8 @@ class spatial_dataloader():
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
                 ]))
         
-        print '==> Validation data :',len(validation_set),'frames'
-        print validation_set[1][1].size()
+        print('==> Validation data: {} frames'.format(len(validation_set)))
+        print(validation_set[1][1].size())
 
         val_loader = DataLoader(
             dataset=validation_set, 
@@ -161,7 +161,7 @@ class spatial_dataloader():
 if __name__ == '__main__':
     
     dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                path='/home/ubuntu/data/UCF101/spatial_no_sampled/', 
-                                ucf_list='/home/ubuntu/cvlab/pytorch/ucf101_two_stream/github/UCF_list/',
-                                ucf_split='01')
+                                    path='/home/nhan/projects/video/data/UCF101/spatial_no_sampled/', 
+                                    ucf_list='/home/nhan/projects/video/UCF_list/',
+                                    ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
