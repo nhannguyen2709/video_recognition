@@ -39,8 +39,8 @@ def main():
     data_loader = dataloader.spatial_dataloader(
                         BATCH_SIZE=arg.batch_size,
                         num_workers=8,
-                        path='/home/ubuntu/data/UCF101/spatial_no_sampled/',
-                        ucf_list ='/home/ubuntu/cvlab/pytorch/ucf101_two_stream/github/UCF_list/',
+                        path='data/UCF101/spatial_no_sampled/',
+                        ucf_list ='UCF_list/',
                         ucf_split ='01', 
                         )
     
@@ -254,12 +254,6 @@ class Spatial_CNN():
             
         #print(' * Video level Prec@1 {top1:.3f}, Video level Prec@5 {top5:.3f}'.format(top1=top1, top5=top5))
         return top1,top5,loss.data.cpu().numpy()
-
-
-
-
-
-
 
 if __name__=='__main__':
     main()
