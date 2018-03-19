@@ -18,7 +18,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 import dataloader
 from utils import *
-from network import *
+from network import resnet101
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -107,23 +107,24 @@ class Spatial_CNN():
         
         for self.epoch in range(self.start_epoch, self.nb_epochs):
             self.train_1epoch()
-            prec1, val_loss = self.validate_1epoch()
-            is_best = prec1 > self.best_prec1
-            #lr_scheduler
-            self.scheduler.step(val_loss)
-            # save model
-            if is_best:
-                self.best_prec1 = prec1
-                with open('record/spatial/spatial_video_preds.pickle','wb') as f:
-                    pickle.dump(self.dic_video_level_preds,f)
-                f.close()
-            
-            save_checkpoint({
-                'epoch': self.epoch,
-                'state_dict': self.model.state_dict(),
-                'best_prec1': self.best_prec1,
-                'optimizer' : self.optimizer.state_dict()
-            },is_best,'record/spatial/checkpoint.pth.tar','record/spatial/model_best.pth.tar')
+            if self.epoch % 100 == 0:
+                prec1, val_loss = self.validate_1epoch()
+                is_best = prec1 > self.best_prec1
+                #lr_scheduler
+                self.scheduler.step(val_loss)
+                # save model
+                if is_best:
+                    self.best_prec1 = prec1
+                    with open('record/spatial/spatial_video_preds.pickle','wb') as f:
+                        pickle.dump(self.dic_video_level_preds,f)
+                    f.close()
+                
+                save_checkpoint({
+                    'epoch': self.epoch,
+                    'state_dict': self.model.state_dict(),
+                    'best_prec1': self.best_prec1,
+                    'optimizer' : self.optimizer.state_dict()
+                },is_best,'record/spatial/checkpoint.pth.tar','record/spatial/model_best.pth.tar')
 
     def train_1epoch(self):
         print('==> Epoch:[{0}/{1}][training stage]'.format(self.epoch, self.nb_epochs))
@@ -171,12 +172,12 @@ class Spatial_CNN():
             batch_time.update(time.time() - end)
             end = time.time()
         
-        info = {'Epoch':[self.epoch],
-                'Batch Time':[round(batch_time.avg,3)],
-                'Data Time':[round(data_time.avg,3)],
-                'Loss':[round(losses.avg,5)],
-                'Prec@1':[round(top1.avg,4)],
-                'Prec@5':[round(top5.avg,4)],
+        info = {'Epoch':self.epoch,
+                'Batch Time':round(batch_time.avg,4),
+                'Data Time':round(data_time.avg,4),
+                'Loss':round(losses.avg,4),
+                'Prec@1':round(top1.avg,4),
+                'Prec@5':round(top5.avg,4),
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
         record_info(info, 'record/spatial/rgb_train.csv','train')
@@ -216,11 +217,11 @@ class Spatial_CNN():
         video_top1, video_top5, video_loss = self.frame2_video_level_accuracy()
             
 
-        info = {'Epoch':[self.epoch],
-                'Batch Time':[round(batch_time.avg,3)],
-                'Loss':[round(video_loss,5)],
-                'Prec@1':[round(video_top1,3)],
-                'Prec@5':[round(video_top5,3)]}
+        info = {'Epoch':self.epoch,
+                'Batch Time':round(batch_time.avg,4),
+                'Loss':round(video_loss,4),
+                'Prec@1':round(video_top1,4),
+                'Prec@5':round(video_top5,4)}
         record_info(info, 'record/spatial/rgb_test.csv','test')
         return video_top1, video_loss
 
