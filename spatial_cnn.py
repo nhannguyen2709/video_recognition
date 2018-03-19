@@ -16,11 +16,9 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-import dataloader
+from dataloader import spatial_dataloader as spatial_dataloader
 from utils import *
 from network import resnet101
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 parser = argparse.ArgumentParser(description='UCF101 spatial stream on resnet101')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
@@ -33,16 +31,14 @@ parser.add_argument('--start-epoch', default=0, type=int, metavar='N', help='man
 def main():
     global arg
     arg = parser.parse_args()
-    print arg
+    print(arg)
 
     #Prepare DataLoader
-    data_loader = dataloader.spatial_dataloader(
-                        BATCH_SIZE=arg.batch_size,
-                        num_workers=8,
-                        path='data/UCF101/spatial_no_sampled/',
-                        ucf_list ='UCF_list/',
-                        ucf_split ='01', 
-                        )
+    data_loader = spatial_dataloader.spatial_dataloader(BATCH_SIZE=arg.batch_size,
+                                    num_workers=8,
+                                    path='data/UCF101/spatial_no_sampled/',
+                                    ucf_list ='UCF_list/',
+                                    ucf_split ='01')
     
     train_loader, test_loader, test_video = data_loader.run()
     #Model 
@@ -216,7 +212,6 @@ class Spatial_CNN():
 
         video_top1, video_top5, video_loss = self.frame2_video_level_accuracy()
             
-
         info = {'Epoch':self.epoch,
                 'Batch Time':round(batch_time.avg,4),
                 'Loss':round(video_loss,4),
