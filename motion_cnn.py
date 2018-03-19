@@ -5,6 +5,7 @@ import time
 from tqdm import tqdm
 import shutil
 from random import randint
+import os
 import argparse
 
 from torch.utils.data import Dataset, DataLoader
@@ -18,7 +19,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from utils import accuracy, AverageMeter, save_checkpoint, record_info
 from network import resnet101
-import dataloader.motion_dataloader as motion_dataloader
+from dataloader import motion_dataloader as motion_dataloader
 
 
 parser = argparse.ArgumentParser(description='UCF101 motion stream on resnet101')
@@ -36,7 +37,7 @@ def main():
 
     #Prepare DataLoader
     data_loader = motion_dataloader.Motion_DataLoader(BATCH_SIZE=arg.batch_size,
-                                                      num_workers=4,
+                                                      num_workers=2,
                                                       path='data/UCF101/tvl1_flow/',
                                                       ucf_list='UCF_list/',
                                                       ucf_split='01',
