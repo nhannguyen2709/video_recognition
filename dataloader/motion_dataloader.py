@@ -178,8 +178,8 @@ class Motion_DataLoader():
 
 if __name__ == '__main__':
     data_loader = Motion_DataLoader(BATCH_SIZE=1,num_workers=4,in_channel=10,
-                                    path='/home/nhan/projects/video/data/UCF101/tvl1_flow/',
-                                    ucf_list='/home/nhan/projects/video/UCF_list/',
+                                    path='data/UCF101/tvl1_flow/',
+                                    ucf_list='UCF_list/',
                                     ucf_split='01')
     train_loader,val_loader,test_video = data_loader.run()
     print(train_loader,val_loader)
