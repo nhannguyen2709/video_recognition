@@ -37,7 +37,7 @@ def main():
 
     #Prepare DataLoader
     data_loader = motion_dataloader.Motion_DataLoader(BATCH_SIZE=arg.batch_size,
-                                                      num_workers=2,
+                                                      num_workers=4,
                                                       path='data/UCF101/tvl1_flow/',
                                                       ucf_list='UCF_list/',
                                                       ucf_split='01',
