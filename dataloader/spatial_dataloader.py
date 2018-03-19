@@ -3,16 +3,16 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 import random
-import split_train_test_video.UCF101_splitter as UCF101_splitter
+from dataloader.split_train_test_video import UCF101_splitter as UCF101_splitter
 from skimage import io, color, exposure
 
 class spatial_dataset(Dataset):  
     def __init__(self, dic, root_dir, mode, transform=None):
  
-        self.keys = dic.keys()
-        self.values=dic.values()
+        self.keys = list(dic.keys())
+        self.values= list(dic.values())
         self.root_dir = root_dir
-        self.mode =mode
+        self.mode = mode
         self.transform = transform
 
     def __len__(self):
@@ -79,8 +79,8 @@ class spatial_dataloader():
         self.train_video, self.test_video = splitter.split_video()
 
     def load_frame_count(self):
-        #print '==> Loading frame number of each video'
-        with open('dic/frame_count.pickle','rb') as file:
+        print('==> Loading frame number of each video')
+        with open('dataloader/dic/frame_count.pickle','rb') as file:
             dic_frame = pickle.load(file)
         file.close()
 
@@ -110,7 +110,7 @@ class spatial_dataloader():
             self.dic_training[key] = self.train_video[video]
                     
     def val_sample20(self):
-        print '==> sampling testing frames'
+        print('==> sampling testing frames')
         self.dic_testing={}
         for video in self.test_video:
             nb_frame = self.frame_count[video]-10+1
@@ -154,14 +154,10 @@ class spatial_dataloader():
             num_workers=self.num_workers)
         return val_loader
 
-
-
-
-
 if __name__ == '__main__':
     
     dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                    path='/home/nhan/projects/video/data/UCF101/spatial_no_sampled/', 
-                                    ucf_list='/home/nhan/projects/video/UCF_list/',
+                                    path='data/UCF101/spatial_no_sampled/', 
+                                    ucf_list='UCF_list/',
                                     ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
