@@ -26,8 +26,8 @@ class motion_dataset(Dataset):
         self.transform = transform
         self.mode=mode
         self.in_channel = in_channel
-        self.img_rows=224
-        self.img_cols=224
+        self.img_rows = 224
+        self.img_cols = 224
 
     def stackopf(self):
         name = 'v_'+self.video
@@ -99,7 +99,7 @@ class Motion_DataLoader():
         
     def load_frame_count(self):
         #print '==> Loading frame number of each video'
-        with open('/home/nhan/projects/video/dataloader/dic/frame_count.pickle','rb') as file:
+        with open('dataloader/dic/frame_count.pickle','rb') as file:
             dic_frame = pickle.load(file)
         file.close()
 
