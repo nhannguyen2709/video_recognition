@@ -112,7 +112,7 @@ class Motion_CNN():
         
         for self.epoch in range(self.start_epoch, self.nb_epochs):
             self.train_1epoch()
-            if self.epoch % 100 == 0:
+            if (self.epoch+1) % 100 == 0:
                 prec1, val_loss = self.validate_1epoch()
                 is_best = prec1 > self.best_prec1
                 #lr_scheduler
@@ -129,7 +129,7 @@ class Motion_CNN():
                     'state_dict': self.model.state_dict(),
                     'best_prec1': self.best_prec1,
                     'optimizer' : self.optimizer.state_dict()
-                },is_best,'record/motion/checkpoint.pth.tar','record/motion/model_best.pth.tar')
+                }, is_best,'record/motion/checkpoint.pth.tar','record/motion/model_best.pth.tar')
 
     def train_1epoch(self):
         print('==> Epoch:[{0}/{1}][training stage]'.format(self.epoch, self.nb_epochs))
@@ -172,12 +172,12 @@ class Motion_CNN():
             batch_time.update(time.time() - end)
             end = time.time()
         
-        info = {'Epoch': self.epoch,
-                'Batch Time': round(batch_time.avg, 4),
-                'Data Time': round(data_time.avg, 4),
-                'Loss': round(losses.avg, 4),
-                'Prec@1': round(top1.avg, 4),
-                'Prec@5': round(top5.avg, 4),
+        info = {'Epoch': [self.epoch],
+                'Batch Time': [np.round(batch_time.avg, 4)],
+                'Data Time': [np.round(data_time.avg, 4)],
+                'Loss': [np.round(losses.avg, 4)],
+                'Prec@1': [np.round(top1.avg, 4)],
+                'Prec@5': [np.round(top5.avg, 4)],
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
         record_info(info, 'record/motion/opf_train.csv','train')
@@ -219,11 +219,11 @@ class Motion_CNN():
                     
         #Frame to video level accuracy
         video_top1, video_top5, video_loss = self.frame2_video_level_accuracy()
-        info = {'Epoch': self.epoch,
-                'Batch Time': round(batch_time.avg, 4),
-                'Loss': round(video_loss, 4),
-                'Prec@1': round(video_top1, 4),
-                'Prec@5': round(video_top5, 4)
+        info = {'Epoch': [self.epoch],
+                'Batch Time': [np.round(batch_time.avg, 4)],
+                'Loss': [np.round(video_loss, 4)],
+                'Prec@1': [np.round(video_top1, 4)],
+                'Prec@5': [np.round(video_top5, 4)]
                 }
         record_info(info, 'record/motion/opf_test.csv','test')
         return video_top1, video_loss

@@ -35,7 +35,7 @@ def main():
 
     #Prepare DataLoader
     data_loader = spatial_dataloader.spatial_dataloader(BATCH_SIZE=arg.batch_size,
-                                    num_workers=8,
+                                    num_workers=4,
                                     path='data/UCF101/spatial_no_sampled/',
                                     ucf_list ='UCF_list/',
                                     ucf_split ='01')
@@ -94,7 +94,7 @@ class Spatial_CNN():
         if self.evaluate:
             self.epoch = 0
             prec1, val_loss = self.validate_1epoch()
-            return
+            return prec1, val_loss
 
     def run(self):
         self.build_model()
@@ -103,7 +103,7 @@ class Spatial_CNN():
         
         for self.epoch in range(self.start_epoch, self.nb_epochs):
             self.train_1epoch()
-            if self.epoch % 100 == 0:
+            if (self.epoch+1) % 100 == 0:
                 prec1, val_loss = self.validate_1epoch()
                 is_best = prec1 > self.best_prec1
                 #lr_scheduler
@@ -168,12 +168,12 @@ class Spatial_CNN():
             batch_time.update(time.time() - end)
             end = time.time()
         
-        info = {'Epoch':self.epoch,
-                'Batch Time':round(batch_time.avg,4),
-                'Data Time':round(data_time.avg,4),
-                'Loss':round(losses.avg,4),
-                'Prec@1':round(top1.avg,4),
-                'Prec@5':round(top5.avg,4),
+        info = {'Epoch': [self.epoch],
+                'Batch Time': [np.round(batch_time.avg, 4)],
+                'Data Time': [np.round(data_time.avg, 4)],
+                'Loss': [np.round(losses.avg, 4)],
+                'Prec@1': [np.round(top1.avg, 4)],
+                'Prec@5': [np.round(top5.avg, 4)],
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
         record_info(info, 'record/spatial/rgb_train.csv','train')
@@ -212,11 +212,11 @@ class Spatial_CNN():
 
         video_top1, video_top5, video_loss = self.frame2_video_level_accuracy()
             
-        info = {'Epoch':self.epoch,
-                'Batch Time':round(batch_time.avg,4),
-                'Loss':round(video_loss,4),
-                'Prec@1':round(video_top1,4),
-                'Prec@5':round(video_top5,4)}
+        info = {'Epoch': [self.epoch],
+                'Batch Time': [np.round(batch_time.avg, 4)],
+                'Loss': [np.round(video_loss,4)],
+                'Prec@1': [np.round(video_top1, 4)],
+                'Prec@5': [np.round(video_top5, 4)]}
         record_info(info, 'record/spatial/rgb_test.csv','test')
         return video_top1, video_loss
 
