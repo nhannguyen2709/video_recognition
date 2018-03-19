@@ -20,13 +20,13 @@ class UCF101_splitter():
 
     def split_video(self):
         self.get_action_index()
-        for path,subdir,files in os.walk(self.path):
+        for path, subdir,files in os.walk(self.path):
             for filename in files:
                 if filename.split('.')[0] == 'trainlist'+self.split:
                     train_video = self.file2_dic(self.path+filename)
                 if filename.split('.')[0] == 'testlist'+self.split:
                     test_video = self.file2_dic(self.path+filename)
-        print('==> (Training video, Validation video): {}, {}', (len(train_video), len(test_video)))
+        print('==> Training videos: {}, Validation videos: {}'.format(len(train_video), len(test_video)))
         self.train_video = self.name_HandstandPushups(train_video)
         self.test_video = self.name_HandstandPushups(test_video)
 
@@ -58,10 +58,8 @@ class UCF101_splitter():
             dic2[videoname] = dic[video]
         return dic2
 
-
 if __name__ == '__main__':
-
-    path = '/home/nhan/projects/video/UCF_list/'
+    path = 'UCF_list/'
     split = '01'
     splitter = UCF101_splitter(path=path,split=split)
     train_video,test_video = splitter.split_video()
