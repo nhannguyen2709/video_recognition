@@ -176,7 +176,7 @@ class Spatial_CNN():
                 'Prec@5': [np.round(top5.avg, 4)],
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
-        record_info(info, 'record/spatial/rgb_train.csv','train')
+        record_info(info, filename='record/spatial/rgb_train.csv', mode='train')
 
     def validate_1epoch(self):
         print('==> Epoch:[{0}/{1}][validation stage]'.format(self.epoch, self.nb_epochs))
@@ -217,7 +217,7 @@ class Spatial_CNN():
                 'Loss': [np.round(video_loss,4)],
                 'Prec@1': [np.round(video_top1, 4)],
                 'Prec@5': [np.round(video_top5, 4)]}
-        record_info(info, 'record/spatial/rgb_test.csv','test')
+        record_info(info, filename='record/spatial/rgb_test.csv', mode='test')
         return video_top1, video_loss
 
     def frame2_video_level_accuracy(self):

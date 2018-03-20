@@ -112,7 +112,7 @@ class Motion_CNN():
         
         for self.epoch in range(self.start_epoch, self.nb_epochs):
             self.train_1epoch()
-            if (self.epoch+1) % 100 == 0:
+            if (self.epoch+1) % 10 == 0:
                 prec1, val_loss = self.validate_1epoch()
                 is_best = prec1 > self.best_prec1
                 #lr_scheduler
@@ -180,7 +180,7 @@ class Motion_CNN():
                 'Prec@5': [np.round(top5.avg, 4)],
                 'lr': self.optimizer.param_groups[0]['lr']
                 }
-        record_info(info, 'record/motion/opf_train.csv','train')
+        record_info(info, filename='record/motion/opf_train.csv', mode='train')
 
     def validate_1epoch(self):
         print('==> Epoch:[{0}/{1}][validation stage]'.format(self.epoch, self.nb_epochs))
@@ -225,7 +225,7 @@ class Motion_CNN():
                 'Prec@1': [np.round(video_top1, 4)],
                 'Prec@5': [np.round(video_top5, 4)]
                 }
-        record_info(info, 'record/motion/opf_test.csv','test')
+        record_info(info, filename='record/motion/opf_test.csv', mode='test')
         return video_top1, video_loss
 
     def frame2_video_level_accuracy(self):
