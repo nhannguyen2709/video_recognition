@@ -79,7 +79,8 @@ class motion_dataset(Dataset):
 
             
             flow[2*(j-1),:,:] = H
-            flow[2*(j-1)+1,:,:] = V      
+            flow[2*(j-1)+1,:,:] = V
+            print(H.shape, V.shape, flow.shape)      
             imgH.close()
             imgV.close()  
         return flow
