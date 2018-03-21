@@ -4,10 +4,10 @@ import os
 import pickle 
 
 def video_to_frames(input_loc, output_loc):
-    """Function to extract frames from input video file
+    """Function to extract frames from an input video file
     and save them as separate frames in an output directory.
     Args:
-        input_loc: Input video file.
+        input_loc: Path to video file.
         output_loc: Output directory to save the frames.
     Returns:
         None
@@ -62,5 +62,5 @@ if __name__=='__main__':
                 pass
 
     # Dump the frame count dict into pickle file
-    with open('new_videos_frame_count.pickle', 'wb') as handle:
+    with open('dataloader/dic/new_videos_frame_count.pickle', 'wb') as handle:
         pickle.dump(frame_count, handle, protocol=pickle.HIGHEST_PROTOCOL)
