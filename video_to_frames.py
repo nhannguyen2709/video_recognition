@@ -11,10 +11,7 @@ def video_to_frames(input_loc, output_loc):
     Returns:
         None
     """
-    try:
-        os.mkdir(output_loc)
-    except OSError:
-        pass
+    
     # Log the time
     time_start = time.time()
     # Start capturing the feed
@@ -42,6 +39,13 @@ def video_to_frames(input_loc, output_loc):
             print ("It took {} seconds for conversion.".format(time_end-time_start))
 
 if __name__=='__main__':
-    for 
-    video_to_frames('data/NewVideos/PickUpObject/C0090.mp4',
-                    'data/NewVideos/jpegs_256/PickUpObject')
+    if not os.path.exists('data/NewVideos/jpegs_256'):
+        os.mkdir('data/NewVideos/jpegs_256')
+    for path, subdir, filenames in os.walk('data/NewVideos/'):
+        for filename in filenames:
+            path_to_video = os.path.join(path, filename)
+            if path_to_video.endswith('.mp4'):
+                video_to_frames(path_to_video,
+                                os.path.join('data/NewVideos/jpegs_256', subdir))
+            else:
+                pass
