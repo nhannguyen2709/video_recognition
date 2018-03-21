@@ -37,15 +37,15 @@ colType = 0  # 0 or default:RGB, 1:GRAY (but pass gray image with shape (h,w,1))
 
 for subdir in sorted(os.listdir(arg.data_dir)):
     path_to_subdir = os.path.join(arg.data_dir, subdir)
-    list_of_images = sorted(os.listdir(path_to_subdir))
+    list_of_frames = sorted(os.listdir(path_to_subdir))
     if not os.path.exists(os.path.join(arg.u_dir, subdir)) and not os.path.exists(os.path.join(arg.v_dir, subdir)):
         os.makedirs(os.path.join(arg.u_dir, subdir))
         os.makedirs(os.path.join(arg.v_dir, subdir))
     start = time.time()
-    for i in range(len(list_of_images)):
+    for i in range(len(list_of_frames)):
         try:
-            im1 = np.array(Image.open(os.path.join(path_to_subdir, list_of_images[i])))
-            im2 = np.array(Image.open(os.path.join(path_to_subdir, list_of_images[i+1])))
+            im1 = np.array(Image.open(os.path.join(path_to_subdir, list_of_frames[i])))
+            im2 = np.array(Image.open(os.path.join(path_to_subdir, list_of_frames[i+1])))
             im1 = im1.astype(float) / 255.
             im2 = im2.astype(float) / 255.
             s = time.time()
@@ -60,12 +60,12 @@ for subdir in sorted(os.listdir(arg.data_dir)):
             rescaled_u = (255.0 / u.max() * (u - u.min())).astype(np.uint8)
             rescaled_v = (255.0 / v.max() * (v - v.min())).astype(np.uint8)
             u_im = Image.fromarray(rescaled_u)
-            path_to_u_im = os.path.join(os.path.join(arg.u_dir, subdir), list_of_images[i])
+            path_to_u_im = os.path.join(os.path.join(arg.u_dir, subdir), list_of_frames[i])
             u_im.save(path_to_u_im)
             v_im = Image.fromarray(rescaled_v)
-            path_to_v_im = os.path.join(os.path.join(arg.v_dir, subdir), list_of_images[i])
+            path_to_v_im = os.path.join(os.path.join(arg.v_dir, subdir), list_of_frames[i])
             v_im.save(path_to_v_im)
         except IndexError:
             pass
     end = time.time()
-    print('Time taken to generate optical flows from video {}'.format(start - end))
+    print('Time taken to generate optical flows from video {}: {}'.format(subdir, end - start))
