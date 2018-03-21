@@ -29,6 +29,32 @@ class motion_dataset(Dataset):
         self.img_rows = 224
         self.img_cols = 224
 
+    def __len__(self):
+        return len(self.keys)
+
+    def __getitem__(self, idx):
+        #print ('mode:',self.mode,'calling Dataset:__getitem__ @ idx=%d'%idx)
+        
+        if self.mode == 'train':
+            self.video, nb_clips = self.keys[idx].split('-')
+            self.clips_idx = random.randint(1,int(nb_clips))
+        elif self.mode == 'val':
+            self.video,self.clips_idx = self.keys[idx].split('-')
+        else:
+            raise ValueError('There are only train and val mode')
+
+        label = self.values[idx]
+        label = int(label)-1 
+        data = self.stackopf()
+
+        if self.mode == 'train':
+            sample = (data,label)
+        elif self.mode == 'val':
+            sample = (self.video,data,label)
+        else:
+            raise ValueError('There are only train and val mode')
+        return sample
+        
     def stackopf(self):
         name = 'v_'+self.video
         u = self.root_dir+ 'u/' + name
@@ -57,33 +83,6 @@ class motion_dataset(Dataset):
             imgH.close()
             imgV.close()  
         return flow
-
-    def __len__(self):
-        return len(self.keys)
-
-    def __getitem__(self, idx):
-        #print ('mode:',self.mode,'calling Dataset:__getitem__ @ idx=%d'%idx)
-        
-        if self.mode == 'train':
-            self.video, nb_clips = self.keys[idx].split('-')
-            self.clips_idx = random.randint(1,int(nb_clips))
-        elif self.mode == 'val':
-            self.video,self.clips_idx = self.keys[idx].split('-')
-        else:
-            raise ValueError('There are only train and val mode')
-
-        label = self.values[idx]
-        label = int(label)-1 
-        data = self.stackopf()
-
-        if self.mode == 'train':
-            sample = (data,label)
-        elif self.mode == 'val':
-            sample = (self.video,data,label)
-        else:
-            raise ValueError('There are only train and val mode')
-        return sample
-
 
 class Motion_DataLoader():
     def __init__(self, BATCH_SIZE, num_workers, in_channel,  path, ucf_list, ucf_split):
