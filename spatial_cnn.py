@@ -18,7 +18,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from dataloader import spatial_dataloader as spatial_dataloader
 from utils import *
-from network import resnet101
+from pytorch_resnet_zoo import resnet101
 
 parser = argparse.ArgumentParser(description='UCF101 spatial stream on resnet101')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
