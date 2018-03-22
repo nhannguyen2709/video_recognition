@@ -68,4 +68,4 @@ for subdir in sorted(os.listdir(arg.data_dir)):
         except IndexError:
             pass
     end = time.time()
-    print('Time taken to generate optical flows from video {}'.format(start - end))
+    print('Time taken to generate optical flows from video {}: {}'.format(subdir, end - start))
