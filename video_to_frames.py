@@ -18,6 +18,9 @@ def video_to_frames(input_loc, output_loc):
     time_start = time.time()
     # Start capturing the feed
     cap = cv2.VideoCapture(input_loc)
+    # Set width and height
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(224))
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(224))
     # Find the number of frames
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
     print("\nNumber of frames: ", video_length)
