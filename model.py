@@ -8,7 +8,87 @@ from cv2 import resize, imread
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Concatenate
 from keras.applications.vgg19 import VGG19
-from keras.utils import Sequence
+from keras.utils import Sequence, to_categorical
+
+def TimeDistributedVGG19_GRU(frames_input_shape, poses_input_shape, classes):
+    frames = Input(shape=frames_input_shape, name='frames')
+    poses = Input(shape=poses_input_shape, name='poses')
+    # Block 1
+    frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1'))(frames)
+    frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2'))(frames_features)
+    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool'))(frames_features)   
+    # Block 2
+    frames_features = TimeDistributed(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2'))(frames_features)
+    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool'))(frames_features)  
+    # Block 3
+    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv4'))(frames_features)
+    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool'))(frames_features)   
+    # Block 4
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv4'))(frames_features)
+    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool'))(frames_features)   
+    # Block 5
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3'))(frames_features)
+    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv4'))(frames_features)
+    frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)  
+    # GRUs block
+    merged_features = Concatenate(name='concatenate')([frames_features, poses])
+    merged_features = GRU(256, return_sequences=True, recurrent_dropout=0.2, dropout=0.2, name='gru1')(merged_features)
+    merged_features = GRU(128, recurrent_dropout=0.2, name='gru2')(merged_features)
+    outputs = Dense(classes, activation='softmax', name='predictions')(merged_features)
+    model = Model(inputs=[frames, poses], outputs=outputs)  
+    # Overload model's weights with the pre-trained ImageNet weights of VGG19
+    vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
+    for i, layer in enumerate(vgg19.layers[:-1]):
+        model.layers[i].set_weights(weights=layer.get_weights())
+        model.layers[i].trainable = False
+        
+    return model
+
+
+def VGG19_FeatureExtractor(frames_input_shape):
+    frames = Input(shape=frames_input_shape, name='frames')
+    # Block 1
+    frames_features = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(frames)
+    frames_features = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(frames_features)
+    frames_features = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(frames_features) 
+    # Block 2
+    frames_features = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1')(frames_features)
+    frames_features = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2')(frames_features)
+    frames_features = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(frames_features)
+    # Block 3
+    frames_features = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(frames_features)
+    frames_features = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(frames_features)
+    frames_features = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(frames_features)
+    frames_features = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv4')(frames_features)
+    frames_features = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(frames_features)
+     # Block 4
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv4')(frames_features)
+    frames_features = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(frames_features) 
+    # Block 5
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(frames_features)
+    frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv4')(frames_features)
+    frames_features = GlobalMaxPooling2D()(frames_features)   
+    model = Model(inputs=frames, outputs=frames_features)
+    vgg19 = VGG19(include_top=False, input_shape=frames_input_shape)
+    for i, layer in enumerate(vgg19.layers[:-1]):
+        model.layers[i].set_weights(weights=layer.get_weights())
+        model.layers[i].trainable = False
+
+    return model
 
 class VideoSequence(Sequence):
     def __init__(self, data_dir, frame_counts_path, batch_size, num_frames_used):
@@ -43,14 +123,18 @@ class VideoSequence(Sequence):
         batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
         batch_video_frames = []
         batch_video_poses = []
+
+        feature_extractor = VGG19_FeatureExtractor(frames_input_shape=(224, 224, 3))
+
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
             
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
+                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
-                single_video_poses = single_video_poses.reshape(frame_counts, -1)
-                single_video_poses = single_video_poses[:self.num_frames_used]
+                single_video_poses = single_video_poses[:self.num_frames_used, :, :]
+                single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1. # fill missing coordinates with -1
 
             elif frame_counts < self.num_frames_used:
@@ -58,15 +142,17 @@ class VideoSequence(Sequence):
                                                 for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])  
                 single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)), 
                                              mode='constant', constant_values=0)
+                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
-                single_video_poses = single_video_poses.reshape(frame_counts, -1)
-                single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0)),
+                single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0)),
                                             mode='constant', constant_values=0)
+                single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1.
 
             elif frame_counts == self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
+                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses.reshape(frame_counts, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1.
@@ -74,56 +160,16 @@ class VideoSequence(Sequence):
             batch_video_frames.append(single_video_frames)
             batch_video_poses.append(single_video_poses)
 
-        return [np.array(batch_video_frames), np.array(batch_video_poses)], np.array(batch_y)
+        return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(np.array(batch_y), num_classes=7)
     
-def TimeDistributedVGG19_GRU(frames_input_shape, poses_input_shape, classes):
-    frames = Input(shape=frames_input_shape, name='frames')
-    poses = Input(shape=poses_input_shape, name='poses')
-    # Block 1
-    frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1'))(frames)
-    frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2'))(frames_features)
-    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool'))(frames_features)
-    
-    # Block 2
-    frames_features = TimeDistributed(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2'))(frames_features)
-    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool'))(frames_features)
-    
-    # Block 3
-    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv4'))(frames_features)
-    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool'))(frames_features)
-    
-    # Block 4
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv4'))(frames_features)
-    frames_features = TimeDistributed(MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool'))(frames_features)
-    
-    # Block 5
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3'))(frames_features)
-    frames_features = TimeDistributed(Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv4'))(frames_features)
-    frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)
-    
-    # GRUs block
-    merged_features = Concatenate(name='concatenate')([frames_features, poses])
-    merged_features = GRU(256, return_sequences=True, recurrent_dropout=0.2, dropout=0.2, name='gru1')(merged_features)
-    merged_features = GRU(128, recurrent_dropout=0.2, name='gru2')(merged_features)
-    outputs = Dense(classes, activation='softmax', name='predictions')(merged_features)
-    model = Model(inputs=[frames, poses], outputs=outputs)
-    
-    # Overload model's weights with the pre-trained ImageNet weights of VGG19
-    vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
-    for i, layer in enumerate(vgg19.layers[:-1]):
-        model.layers[i].set_weights(weights=layer.get_weights())
-        model.layers[i].trainable = False
-        
-    return model
-
 if __name__=='__main__':
-    pass
+    import time
+    start = time.time()
+    video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
+                                   frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+                                   batch_size=8, num_frames_used=250)
+    batch_x, batch_y = video_sequence.__getitem__(1)
+    end = time.time()
+    print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
+    print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
+    # pass
