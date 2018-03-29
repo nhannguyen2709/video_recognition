@@ -7,14 +7,14 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="2"
 
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from models import VideoSequence, TimeDistributedVGG19_GRU
+from model import VideoSequence, TimeDistributedVGG19_GRU
 
 # limit tensorflow's memory usage
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.5
-set_session(tf.Session(config=config))
+# import tensorflow as tf
+# from keras.backend.tensorflow_backend import set_session
+# config = tf.ConfigProto()
+# config.gpu_options.per_process_gpu_memory_fraction = 0.95
+# set_session(tf.Session(config=config))
 
 parser = argparse.ArgumentParser(description='Training and evaluating model')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
@@ -36,23 +36,26 @@ def train():
                                    batch_size=args.batch_size, num_frames_used=args.num_frames_used)
 
     model = TimeDistributedVGG19_GRU(frames_input_shape=(args.num_frames_used, 224, 224, 3), 
-                                 poses_input_shape=(args.num_frames_used, 54),
-                                 classes=7)
+                                     poses_input_shape=(args.num_frames_used, 54),
+                                     classes=7)
 
-    if os.path.exists(args.checkpoint_path):
-        model.load_weights(args.checkpoint_path)
+    if os.path.exists('checkpoint/weights.best.hdf5'):
+        model.load_weights('checkpoint/weights.best.hdf5')
     model.summary()
     model.compile(optimizer=Adam(lr=args.learning_rate), 
-                loss='categorical_crossentropy',
-                metrics=['acc'])
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='val_acc', verbose=1, 
-                                 save_best_only=True, mode='max')
+                                 mode='max', period=10)
     early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=7)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=5, min_lr=0.001)
-    callbacks = [checkpoint, early_stopping, reduce_lr]
+    save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
+                                monitor='val_acc', verbose=1, 
+                                save_best_only=True, mode='max')
+    callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
 
     model.fit_generator(video_sequence, epochs=args.epochs, 
                         callbacks=callbacks, workers=args.num_workers, 
@@ -76,8 +79,8 @@ def evaluate_1video():
     model = TimeDistributedVGG19_GRU(frames_input_shape=(args.num_frames_used, 224, 224, 3), 
                                      poses_input_shape=(args.num_frames_used, 54),
                                      classes=7)
-    if os.path.exists(args.checkpoint_path):
-        model.load_weights(args.checkpoint_path)
+    if os.path.exists('checkpoint/weights.best.hdf5'):
+        model.load_weights('checkpoint/weights.best.hdf5')
     model.predict(x=[single_video_frames, single_video_poses])
 
 
