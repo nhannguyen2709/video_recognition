@@ -5,6 +5,7 @@ import pickle
 from sklearn.utils import shuffle
 from cv2 import resize, imread
 
+from keras import backend as K
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Concatenate
 from keras.applications.vgg19 import VGG19
@@ -144,7 +145,8 @@ class VideoSequence(Sequence):
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                with K.device('cpu0'):
+                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses[:self.num_frames_used, :, :]
                 single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
@@ -155,7 +157,8 @@ class VideoSequence(Sequence):
                                                 for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])  
                 single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)), 
                                              mode='constant', constant_values=0)
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                with K.device('cpu0'):
+                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0)),
                                             mode='constant', constant_values=0)
@@ -165,7 +168,8 @@ class VideoSequence(Sequence):
             elif frame_counts == self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                with K.device('cpu0'):
+                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses.reshape(frame_counts, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1.
