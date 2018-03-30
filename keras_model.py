@@ -178,17 +178,17 @@ class VideoSequence(Sequence):
         return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(np.array(batch_y), num_classes=7)
     
 if __name__=='__main__':
-    temporal_gru = TemporalGRU(frames_features_input_shape=(250, 512), 
-                               poses_input_shape=(250, 54),
-                               classes=7)
-    temporal_gru.summary()
-    # import time
-    # start = time.time()
-    # video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
-    #                                frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-    #                                batch_size=16, num_frames_used=250)
-    # batch_x, batch_y = video_sequence.__getitem__(1)
-    # end = time.time()
-    # print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
-    # print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
+    # temporal_gru = TemporalGRU(frames_features_input_shape=(250, 512), 
+    #                            poses_input_shape=(250, 54),
+    #                            classes=7)
+    # temporal_gru.summary()
+    import time
+    start = time.time()
+    video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
+                                   frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+                                   batch_size=16, num_frames_used=250)
+    batch_x, batch_y = video_sequence.__getitem__(1)
+    end = time.time()
+    print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
+    print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
     # pass
