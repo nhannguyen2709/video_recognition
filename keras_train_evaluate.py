@@ -3,9 +3,9 @@ import numpy as np
 from cv2 import imread, resize
 import argparse
 
+import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 
-from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras_model import VideoSequence, TemporalGRU
@@ -36,7 +36,7 @@ def train():
                                    frame_counts_path='dataloader/dic/merged_frame_count.pickle',
                                    batch_size=args.batch_size, num_frames_used=args.num_frames_used)
 
-    with K.device('gpu0'):
+    with tf.device('/gpu:0'):
         model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 512), 
                             poses_input_shape=(args.num_frames_used, 54),
                             classes=7)
@@ -78,7 +78,7 @@ def evaluate_1video():
     single_video_poses = single_video_poses[:args.num_frames_used]
     single_video_poses[np.isnan(single_video_poses)] = -1. # fill missing coordinates with -1
     
-    with K.device('gpu0'):
+    with tf.device('/gpu:0'):
         model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 224, 224, 3), 
                             poses_input_shape=(args.num_frames_used, 54),
                             classes=7)

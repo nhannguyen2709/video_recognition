@@ -2,10 +2,10 @@ import os
 import numpy as np
 import pickle
 
+import tensorflow as tf
 from sklearn.utils import shuffle
 from cv2 import resize, imread
 
-from keras.backend import tensorflow_backend as K
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Concatenate
 from keras.applications.vgg19 import VGG19
@@ -138,7 +138,7 @@ class VideoSequence(Sequence):
         batch_video_frames = []
         batch_video_poses = []
 
-        with K.device('cpu0'):
+        with tf.device('/cpu:0'):
             feature_extractor = VGG19_FeatureExtractor(frames_input_shape=(224, 224, 3))
 
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
