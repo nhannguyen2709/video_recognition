@@ -7,14 +7,14 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="2"
 
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
-from model import VideoSequence, TimeDistributedVGG19_GRU
+from model import VideoSequence, TemporalGRU
 
 # limit tensorflow's memory usage
-# import tensorflow as tf
-# from keras.backend.tensorflow_backend import set_session
-# config = tf.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 0.95
-# set_session(tf.Session(config=config))
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+config.gpu_options.per_process_gpu_memory_fraction = 0.95
+set_session(tf.Session(config=config))
 
 parser = argparse.ArgumentParser(description='Training and evaluating model')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
@@ -35,9 +35,9 @@ def train():
                                    frame_counts_path='dataloader/dic/merged_frame_count.pickle',
                                    batch_size=args.batch_size, num_frames_used=args.num_frames_used)
 
-    model = TimeDistributedVGG19_GRU(frames_input_shape=(args.num_frames_used, 224, 224, 3), 
-                                     poses_input_shape=(args.num_frames_used, 54),
-                                     classes=7)
+    model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 512), 
+                        poses_input_shape=(args.num_frames_used, 54),
+                        classes=7)
 
     if os.path.exists('checkpoint/weights.best.hdf5'):
         model.load_weights('checkpoint/weights.best.hdf5')
@@ -76,9 +76,9 @@ def evaluate_1video():
     single_video_poses = single_video_poses[:args.num_frames_used]
     single_video_poses[np.isnan(single_video_poses)] = -1. # fill missing coordinates with -1
     
-    model = TimeDistributedVGG19_GRU(frames_input_shape=(args.num_frames_used, 224, 224, 3), 
-                                     poses_input_shape=(args.num_frames_used, 54),
-                                     classes=7)
+    model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 224, 224, 3), 
+                        poses_input_shape=(args.num_frames_used, 54),
+                        classes=7)
     if os.path.exists('checkpoint/weights.best.hdf5'):
         model.load_weights('checkpoint/weights.best.hdf5')
     model.predict(x=[single_video_frames, single_video_poses])
