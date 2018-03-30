@@ -49,8 +49,7 @@ def TimeDistributedVGG19_GRU(frames_input_shape, poses_input_shape, classes):
     vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
-        model.layers[i].trainable = False
-        
+        model.layers[i].trainable = False      
     return model
 
 
@@ -87,8 +86,22 @@ def VGG19_FeatureExtractor(frames_input_shape):
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
         model.layers[i].trainable = False
-
     return model
+
+
+def TemporalGRU(frames_features_input_shape, poses_input_shape, classes):
+    frames_features = Input(input_shape=frames_features_input_shape, name='frames')
+    poses = Input(input_shape=poses_input_shape, name='poses')
+    merged_features = Concatenate(name='concatenate')([frames_features, poses])
+    merged_features = GRU(256, return_sequences=True, recurrent_dropout=0.2,
+                          dropout=0.2, name='gru1')(merged_features)
+    merged_features = GRU(128, recurrent_dropout=0.2,
+                          name='gru2')(merged_features)
+    outputs = Dense(classes, activation='softmax',
+                    name='predictions')(merged_features)
+    model = Model(inputs=[frames_features, poses], outputs=outputs)
+    return model
+
 
 class VideoSequence(Sequence):
     def __init__(self, data_dir, frame_counts_path, batch_size, num_frames_used):
