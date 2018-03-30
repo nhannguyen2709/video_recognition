@@ -90,8 +90,8 @@ def VGG19_FeatureExtractor(frames_input_shape):
 
 
 def TemporalGRU(frames_features_input_shape, poses_input_shape, classes):
-    frames_features = Input(input_shape=frames_features_input_shape, name='frames')
-    poses = Input(input_shape=poses_input_shape, name='poses')
+    frames_features = Input(shape=frames_features_input_shape, name='frames')
+    poses = Input(shape=poses_input_shape, name='poses')
     merged_features = Concatenate(name='concatenate')([frames_features, poses])
     merged_features = GRU(256, return_sequences=True, recurrent_dropout=0.2,
                           dropout=0.2, name='gru1')(merged_features)
@@ -144,7 +144,7 @@ class VideoSequence(Sequence):
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses[:self.num_frames_used, :, :]
                 single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
@@ -155,7 +155,7 @@ class VideoSequence(Sequence):
                                                 for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])  
                 single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)), 
                                              mode='constant', constant_values=0)
-                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0)),
                                             mode='constant', constant_values=0)
@@ -165,7 +165,7 @@ class VideoSequence(Sequence):
             elif frame_counts == self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses.reshape(frame_counts, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1.
@@ -176,13 +176,17 @@ class VideoSequence(Sequence):
         return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(np.array(batch_y), num_classes=7)
     
 if __name__=='__main__':
-    import time
-    start = time.time()
-    video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
-                                   frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                   batch_size=8, num_frames_used=250)
-    batch_x, batch_y = video_sequence.__getitem__(1)
-    end = time.time()
-    print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
-    print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
+    temporal_gru = TemporalGRU(frames_features_input_shape=(250, 512), 
+                               poses_input_shape=(250, 54),
+                               classes=7)
+    temporal_gru.summary()
+    # import time
+    # start = time.time()
+    # video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
+    #                                frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+    #                                batch_size=16, num_frames_used=250)
+    # batch_x, batch_y = video_sequence.__getitem__(1)
+    # end = time.time()
+    # print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
+    # print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
     # pass
