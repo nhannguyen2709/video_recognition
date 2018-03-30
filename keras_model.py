@@ -5,7 +5,7 @@ import pickle
 from sklearn.utils import shuffle
 from cv2 import resize, imread
 
-from keras import backend as K
+from keras.backend import tensorflow_backend as K
 from keras.models import Model, Sequential
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Concatenate
 from keras.applications.vgg19 import VGG19
