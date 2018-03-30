@@ -8,7 +8,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 from keras import backend as K
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
-from model import VideoSequence, TemporalGRU
+from keras_model import VideoSequence, TemporalGRU
 
 # limit tensorflow's memory usage
 # import tensorflow as tf
