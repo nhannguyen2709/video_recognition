@@ -138,15 +138,15 @@ class VideoSequence(Sequence):
         batch_video_frames = []
         batch_video_poses = []
 
-        feature_extractor = VGG19_FeatureExtractor(frames_input_shape=(224, 224, 3))
+        with K.device('cpu0'):
+            feature_extractor = VGG19_FeatureExtractor(frames_input_shape=(224, 224, 3))
 
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
             
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
-                with K.device('cpu0'):
-                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses[:self.num_frames_used, :, :]
                 single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
@@ -157,8 +157,7 @@ class VideoSequence(Sequence):
                                                 for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])  
                 single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)), 
                                              mode='constant', constant_values=0)
-                with K.device('cpu0'):
-                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0)),
                                             mode='constant', constant_values=0)
@@ -168,8 +167,7 @@ class VideoSequence(Sequence):
             elif frame_counts == self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
-                with K.device('cpu0'):
-                    single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
+                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
                 single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
                 single_video_poses = single_video_poses.reshape(frame_counts, -1)
                 single_video_poses[np.isnan(single_video_poses)] = -1.
