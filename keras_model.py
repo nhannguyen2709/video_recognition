@@ -136,7 +136,7 @@ class VideoSequence(Sequence):
         return single_video_frames_features
 
     def __len__(self):
-        return len(self.x) // self.batch_size
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
