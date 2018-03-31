@@ -34,7 +34,7 @@ def train():
 
     videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                 batch_size=2, num_frames_used=64)
+                                 batch_size=2, num_frames_used=16)
     feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
     videos_frames_features = feature_extractor.predict_generator(generator=videos_frames, workers=args.num_workers,
                                                                  use_multiprocessing=args.multiprocessing, verbose=1)
