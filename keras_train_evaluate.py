@@ -14,7 +14,7 @@ from keras_model import VideosFrames, VGG19_FeatureExtractor, TemporalGRU
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.3
+config.gpu_options.per_process_gpu_memory_fraction = 0.2
 set_session(tf.Session(config=config))
 
 parser = argparse.ArgumentParser(description='Training and evaluating model')
@@ -34,7 +34,7 @@ def train():
 
     videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                 batch_size=1, num_frames_used=256)
+                                 batch_size=2, num_frames_used=64)
     feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
     videos_frames_features = feature_extractor.predict_generator(generator=videos_frames, workers=args.num_workers,
                                                                  use_multiprocessing=args.multiprocessing, verbose=1)
