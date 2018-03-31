@@ -124,9 +124,9 @@ class VideosFrames(Sequence):
         batch_video_filenames = [video_path.split('/')[-1] for video_path in batch_x]
         batch_frame_counts = [frame_counts[video_filename] for video_filename in batch_video_filenames]
         return batch_frame_counts
-
+    
     def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
+        return np.ceil(len(self.x) / float(self.batch_size))
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
@@ -134,7 +134,7 @@ class VideosFrames(Sequence):
         batch_video_frames = []
 
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
-            
+             
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
@@ -151,7 +151,7 @@ class VideosFrames(Sequence):
 
             batch_video_frames.append(single_video_frames)
 
-        return np.array(batch_video_frames)
+        return np.vstack(batch_video_frames)
 
 
 class VideoSequence(Sequence):
@@ -221,10 +221,10 @@ class VideoSequence(Sequence):
 if __name__=='__main__':
     import time
     start = time.time()
-    video_sequence = VideoFrames(data_path='data/NewVideos/videos_frames/',
+    videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
                                  batch_size=16, num_frames_used=250)
-    batch_x = video_sequence.__getitem__(1)
+    batch_x = videos_frames.__getitem__(1)
     end = time.time()
     print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
     print(batch_x.shape)
