@@ -104,7 +104,7 @@ def TemporalGRU(frames_features_input_shape, poses_input_shape, classes):
     return model
 
 
-class VideoFrames(Sequence):
+class VideosFrames(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size, num_frames_used):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
