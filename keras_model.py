@@ -104,15 +104,12 @@ def TemporalGRU(frames_features_input_shape, poses_input_shape, classes):
     return model
 
 
-class VideoSequence(Sequence):
-    def __init__(self, data_dir, frame_counts_path, batch_size, num_frames_used):
-        self.data_dir = data_dir
+class VideoFrames(Sequence):
+    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_used):
+        self.data_path = data_path
         self.frame_counts_path = frame_counts_path
-        video_filenames = sorted(os.listdir(self.data_dir))
-        self.labels = sorted(list(set([video_filename.split('_')[1] for video_filename in video_filenames])))
-        self.x_set = [os.path.join(self.data_dir, video_filename) for video_filename in video_filenames] 
-        self.y_set = self.labels_to_idxs(video_filenames)
-        self.x, self.y = shuffle(self.x_set, self.y_set)
+        video_filenames = sorted(os.listdir(self.data_path))
+        self.x = [os.path.join(self.data_path, video_filename) for video_filename in video_filenames] 
         self.batch_size = batch_size
         self.num_frames_used = num_frames_used
     
@@ -127,20 +124,12 @@ class VideoSequence(Sequence):
         batch_video_filenames = [video_path.split('/')[-1] for video_path in batch_x]
         batch_frame_counts = [frame_counts[video_filename] for video_filename in batch_video_filenames]
         return batch_frame_counts
-    
-    @staticmethod
-    def extract_features(single_video_frames):
-        with tf.device('/gpu:0'):
-            feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
-            single_video_frames_features = feature_extractor.predict(single_video_frames, verbose=1)
-        return single_video_frames_features
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
         batch_video_frames = []
 
@@ -162,20 +151,81 @@ class VideoSequence(Sequence):
 
             batch_video_frames.append(single_video_frames)
 
+        return np.array(batch_video_frames)
+
+
+class VideoSequence(Sequence):
+    def __init__(self, data_dir, frame_counts_path, batch_size, num_frames_used):
+        self.data_dir = data_dir
+        self.frame_counts_path = frame_counts_path
+        video_filenames = sorted(os.listdir(self.data_dir))
+        self.labels = sorted(
+            list(set([video_filename.split('_')[1] for video_filename in video_filenames])))
+        self.x = [os.path.join(self.data_dir, video_filename)
+                  for video_filename in video_filenames]
+        self.y = self.labels_to_idxs(video_filenames)
+        self.batch_size = batch_size
+        self.num_frames_used = num_frames_used
+
+    def labels_to_idxs(self, video_filenames):
+        idxs = []
+        for video_filename in video_filenames:
+            idxs.append(self.labels.index(video_filename.split('_')[1]))
+        return idxs
+
+    def get_frame_counts_of_batch(self, batch_x):
+        frame_counts = pickle.load(open(self.frame_counts_path, 'rb'))
+        batch_video_filenames = [video_path.split(
+            '/')[-1] for video_path in batch_x]
+        batch_frame_counts = [frame_counts[video_filename]
+                              for video_filename in batch_video_filenames]
+        return batch_frame_counts
+
+    @staticmethod
+    def extract_features(single_video_frames):
+        with tf.device('/gpu:0'):
+            feature_extractor = VGG19_FeatureExtractor(
+                frames_features_input_shape=(224, 224, 3))
+            single_video_frames_features = feature_extractor.predict(
+                single_video_frames, verbose=1)
+        return single_video_frames_features
+
+    def __len__(self):
+        return int(np.ceil(len(self.x) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
+        batch_video_frames = []
+
+        for video_path, frame_counts in zip(batch_x, batch_frame_counts):
+
+            if frame_counts > self.num_frames_used:
+                single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224))
+                                                for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
+
+            elif frame_counts < self.num_frames_used:
+                single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224))
+                                                for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])
+                single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)),
+                                             mode='constant', constant_values=0)
+
+            elif frame_counts == self.num_frames_used:
+                single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224))
+                                                for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
+
+            batch_video_frames.append(single_video_frames)
+
         return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=7)
-    
 if __name__=='__main__':
-    # temporal_gru = TemporalGRU(frames_features_input_shape=(250, 512), 
-    #                            poses_input_shape=(250, 54),
-    #                            classes=7)
-    # temporal_gru.summary()
     import time
     start = time.time()
-    video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
-                                   frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                   batch_size=16, num_frames_used=250)
-    batch_x, batch_y = video_sequence.__getitem__(1)
+    video_sequence = VideoFrames(data_path='data/NewVideos/videos_frames/',
+                                 frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+                                 batch_size=16, num_frames_used=250)
+    batch_x = video_sequence.__getitem__(1)
     end = time.time()
-    print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
-    print(batch_x.shape, batch_y, batch_y.shape)
+    print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
+    print(batch_x.shape)
     # pass
