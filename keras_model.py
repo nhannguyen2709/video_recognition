@@ -130,7 +130,7 @@ class VideoSequence(Sequence):
     
     @staticmethod
     def extract_features(single_video_frames):
-        with tf.device('/cpu:0'):
+        with tf.device('/gpu:0'):
             feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
             single_video_frames_features = feature_extractor.predict(single_video_frames)
         return single_video_frames_features
