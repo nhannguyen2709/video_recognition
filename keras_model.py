@@ -134,7 +134,7 @@ class VideosFrames(Sequence):
         batch_video_frames = []
 
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
-             
+            print(video_path) 
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
@@ -219,15 +219,16 @@ class VideoSequence(Sequence):
 
         return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=7)
 
-        
+
 if __name__=='__main__':
     import time
     start = time.time()
     videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                 batch_size=2, num_frames_used=256)
-    batch_x = videos_frames.__getitem__(1)
-    end = time.time()
-    print('Time taken to load a single batch of {} videos: {}'.format(2, end - start))
-    print(batch_x.shape)
+                                 batch_size=2, num_frames_used=16)
+    for i in range(len(videos_frames)):                             
+        batch_x = videos_frames.__getitem__(i)
+        end = time.time()
+        print('Time taken to load a single batch of {} videos with {} frames : {}'.format(2, 16, end - start))
+        print(batch_x.shape)
     # pass
