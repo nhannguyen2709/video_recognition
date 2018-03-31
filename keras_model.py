@@ -132,7 +132,7 @@ class VideoSequence(Sequence):
     def extract_features(single_video_frames):
         with tf.device('/gpu:0'):
             feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
-            single_video_frames_features = feature_extractor.predict(single_video_frames)
+            single_video_frames_features = feature_extractor.predict(single_video_frames, verbose=1)
         return single_video_frames_features
 
     def __len__(self):
@@ -176,9 +176,9 @@ if __name__=='__main__':
     start = time.time()
     video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
                                    frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                   batch_size=8, num_frames_used=32)
+                                   batch_size=16, num_frames_used=250)
     batch_x, batch_y = video_sequence.__getitem__(1)
     end = time.time()
     print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
-    print(batch_x[1], batch_y, batch_y.shape)
+    print(batch_x.shape, batch_y, batch_y.shape)
     # pass
