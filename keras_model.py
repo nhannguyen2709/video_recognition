@@ -176,7 +176,7 @@ if __name__=='__main__':
     start = time.time()
     video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
                                    frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                   batch_size=8, num_frames_used=250)
+                                   batch_size=8, num_frames_used=32)
     batch_x, batch_y = video_sequence.__getitem__(1)
     end = time.time()
     print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
