@@ -36,7 +36,7 @@ def train():
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
                                  batch_size=args.batch_size, num_frames_used=args.num_frames_used)
     feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
-    videos_frames_features = feature_extractor.predict_generator(videos_frames, workers=args.num_workers,
+    videos_frames_features = feature_extractor.predict_generator(generator=videos_frames, workers=args.num_workers,
                                                                  use_multiprocessing=args.multiprocessing, verbose=1)
     print(videos_frames_features.shape)
     # model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 512), 
