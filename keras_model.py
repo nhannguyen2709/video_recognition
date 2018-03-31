@@ -126,7 +126,7 @@ class VideosFrames(Sequence):
         return batch_frame_counts
     
     def __len__(self):
-        return np.ceil(len(self.x) / float(self.batch_size))
+        return np.ceil(len(self.x) / float(self.batch_size)).astype(int)
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
