@@ -11,11 +11,11 @@ from keras.optimizers import Adam
 from keras_model import VideosFrames, VGG19_FeatureExtractor, TemporalGRU
 
 # limit tensorflow's memory usage
-import tensorflow as tf
-from keras.backend.tensorflow_backend import set_session
-config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.2
-set_session(tf.Session(config=config))
+# import tensorflow as tf
+# from keras.backend.tensorflow_backend import set_session
+# config = tf.ConfigProto()
+# config.gpu_options.per_process_gpu_memory_fraction = 0.2
+# set_session(tf.Session(config=config))
 
 parser = argparse.ArgumentParser(description='Training and evaluating model')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
