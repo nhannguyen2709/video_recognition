@@ -160,7 +160,7 @@ class VideoSequence(Sequence):
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
 
-            batch_video_frames.append(single_video_frames_features)
+            batch_video_frames.append(single_video_frames)
 
         return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=7)
     
