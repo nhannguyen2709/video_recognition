@@ -54,8 +54,8 @@ def TimeDistributedVGG19_GRU(frames_input_shape, poses_input_shape, classes):
     return model
 
 
-def VGG19_FeatureExtractor(frames_input_shape):
-    frames = Input(shape=frames_input_shape, name='frames')
+def VGG19_FeatureExtractor(frames_features_input_shape):
+    frames = Input(shape=frames_features_input_shape, name='frames')
     # Block 1
     frames_features = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1')(frames)
     frames_features = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2')(frames_features)
@@ -83,7 +83,7 @@ def VGG19_FeatureExtractor(frames_input_shape):
     frames_features = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv4')(frames_features)
     frames_features = GlobalMaxPooling2D()(frames_features)   
     model = Model(inputs=frames, outputs=frames_features)
-    vgg19 = VGG19(include_top=False, input_shape=frames_input_shape)
+    vgg19 = VGG19(include_top=False, input_shape=frames_features_input_shape)
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
         model.layers[i].trainable = False
@@ -127,6 +127,13 @@ class VideoSequence(Sequence):
         batch_video_filenames = [video_path.split('/')[-1] for video_path in batch_x]
         batch_frame_counts = [frame_counts[video_filename] for video_filename in batch_video_filenames]
         return batch_frame_counts
+    
+    @staticmethod
+    def extract_features(single_video_frames):
+        with tf.device('/cpu:0'):
+            feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
+            single_video_frames_features = feature_extractor.predict(single_video_frames)
+        return single_video_frames_features
 
     def __len__(self):
         return len(self.x) // self.batch_size
@@ -136,46 +143,29 @@ class VideoSequence(Sequence):
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
         batch_video_frames = []
-        batch_video_poses = []
-
-        with tf.device('/cpu:0'):
-            feature_extractor = VGG19_FeatureExtractor(frames_input_shape=(224, 224, 3))
 
         for video_path, frame_counts in zip(batch_x, batch_frame_counts):        
             
             if frame_counts > self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:self.num_frames_used] if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
-                single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
-                single_video_poses = single_video_poses[:self.num_frames_used, :, :]
-                single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
-                single_video_poses[np.isnan(single_video_poses)] = -1. # fill missing coordinates with -1
+                single_video_frames_features = self.extract_features(single_video_frames)
 
             elif frame_counts < self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path))[:frame_counts] if frame.endswith('.jpg')])  
                 single_video_frames = np.pad(single_video_frames, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0), (0, 0)), 
                                              mode='constant', constant_values=0)
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
-                single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
-                single_video_poses = np.pad(single_video_poses, ((0, self.num_frames_used - frame_counts), (0, 0), (0, 0)),
-                                            mode='constant', constant_values=0)
-                single_video_poses = single_video_poses.reshape(self.num_frames_used, -1)
-                single_video_poses[np.isnan(single_video_poses)] = -1.
+                single_video_frames_features = self.extract_features(single_video_frames)
 
             elif frame_counts == self.num_frames_used:
                 single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224)) 
                                                 for frame in sorted(os.listdir(video_path)) if frame.endswith('.jpg')])
-                single_video_frames = feature_extractor.predict(single_video_frames, batch_size=50, verbose=1)
-                single_video_poses = np.load(os.path.join(video_path, 'poses.npy'))
-                single_video_poses = single_video_poses.reshape(frame_counts, -1)
-                single_video_poses[np.isnan(single_video_poses)] = -1.
-                
-            batch_video_frames.append(single_video_frames)
-            batch_video_poses.append(single_video_poses)
+                single_video_frames_features = self.extract_features(single_video_frames)
 
-        return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(np.array(batch_y), num_classes=7)
+            batch_video_frames.append(single_video_frames_features)
+
+        return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=7)
     
 if __name__=='__main__':
     # temporal_gru = TemporalGRU(frames_features_input_shape=(250, 512), 
@@ -190,5 +180,5 @@ if __name__=='__main__':
     batch_x, batch_y = video_sequence.__getitem__(1)
     end = time.time()
     print('Time taken to load a single batch of {} videos: {}'.format(8, end - start))
-    print(batch_x[0].shape, batch_x[1].shape, batch_y, batch_y.shape)
+    print(batch_x[1], batch_y, batch_y.shape)
     # pass
