@@ -8,7 +8,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
-from keras_model import VideoSequence, TemporalGRU
+from keras_model import VideosFrames, VGG19_FeatureExtractor, TemporalGRU
 
 # limit tensorflow's memory usage
 # import tensorflow as tf
@@ -32,36 +32,38 @@ def train():
     args = parser.parse_args()
     print(args)
 
-    video_sequence = VideoSequence(data_dir='data/NewVideos/videos_frames/',
-                                   frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                   batch_size=args.batch_size, num_frames_used=args.num_frames_used)
+    videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
+                                 frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+                                 batch_size=args.batch_size, num_frames_used=args.num_frames_used)
+    feature_extractor = VGG19_FeatureExtractor(frames_features_input_shape=(224, 224, 3))
+    videos_frames_features = feature_extractor.predict_generator(videos_frames, workers=args.num_workers,
+                                                                 use_multiprocessing=args.multiprocessing, verbose=1)
+    print(videos_frames_features.shape)
+    # model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 512), 
+    #                     poses_input_shape=(args.num_frames_used, 54),
+    #                     classes=7)
 
-    with tf.device('/gpu:0'):
-        model = TemporalGRU(frames_features_input_shape=(args.num_frames_used, 512), 
-                            poses_input_shape=(args.num_frames_used, 54),
-                            classes=7)
+    # if os.path.exists('checkpoint/weights.best.hdf5'):
+    #     model.load_weights('checkpoint/weights.best.hdf5')
+    # model.summary()
+    # model.compile(optimizer=Adam(lr=args.learning_rate), 
+    #               loss='categorical_crossentropy',
+    #               metrics=['acc'])
 
-    if os.path.exists('checkpoint/weights.best.hdf5'):
-        model.load_weights('checkpoint/weights.best.hdf5')
-    model.summary()
-    model.compile(optimizer=Adam(lr=args.learning_rate), 
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+    # checkpoint = ModelCheckpoint(args.checkpoint_path,
+    #                              monitor='val_acc', verbose=1, 
+    #                              mode='max', period=10)
+    # early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=7)
+    # reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+    #                               patience=5, min_lr=0.001)
+    # save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
+    #                             monitor='val_acc', verbose=1, 
+    #                             save_best_only=True, mode='max')
+    # callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
 
-    checkpoint = ModelCheckpoint(args.checkpoint_path,
-                                 monitor='val_acc', verbose=1, 
-                                 mode='max', period=10)
-    early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=7)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                                  patience=5, min_lr=0.001)
-    save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
-                                monitor='val_acc', verbose=1, 
-                                save_best_only=True, mode='max')
-    callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
-
-    model.fit_generator(video_sequence, epochs=args.epochs, 
-                        callbacks=callbacks, workers=args.num_workers, 
-                        use_multiprocessing=args.multiprocessing, initial_epoch=args.initial_epoch)
+    # model.fit_generator(video_sequence, epochs=args.epochs, 
+    #                     callbacks=callbacks, workers=args.num_workers, 
+    #                     use_multiprocessing=args.multiprocessing, initial_epoch=args.initial_epoch)
 
 
 def evaluate_1video():
