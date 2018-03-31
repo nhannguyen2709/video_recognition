@@ -10,7 +10,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras_model import VideosFrames, VGG19_FeatureExtractor, TemporalGRU
 
-limit tensorflow's memory usage
+# limit tensorflow's memory usage
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 config = tf.ConfigProto()
