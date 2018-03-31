@@ -218,14 +218,16 @@ class VideoSequence(Sequence):
             batch_video_frames.append(single_video_frames)
 
         return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=7)
+
+        
 if __name__=='__main__':
     import time
     start = time.time()
     videos_frames = VideosFrames(data_path='data/NewVideos/videos_frames/',
                                  frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                 batch_size=16, num_frames_used=250)
+                                 batch_size=2, num_frames_used=256)
     batch_x = videos_frames.__getitem__(1)
     end = time.time()
-    print('Time taken to load a single batch of {} videos: {}'.format(16, end - start))
+    print('Time taken to load a single batch of {} videos: {}'.format(2, end - start))
     print(batch_x.shape)
     # pass
