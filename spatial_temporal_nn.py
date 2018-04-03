@@ -7,7 +7,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras.backend import tensorflow_backend as K
 from dataloader.keras_data import VideosFrames, VideosPoses
-from keras_models import VGG19_SpatialTemporalGRU, MotionTemporalGRU
+from keras_models import VGG19_SpatialTemporalGRU
 
 # limit tensorflow's memory usage
 # import tensorflow as tf
