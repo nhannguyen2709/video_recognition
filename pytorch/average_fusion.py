@@ -2,8 +2,8 @@ from matplotlib import pyplot as plt
 import pickle
 import numpy as np
 import torch
-from utils import *
-import dataloader
+from utils import accuracy, AverageMeter, save_checkpoint, record_info
+from dataloader.spatial_dataloader import spatial_dataloader
 
 if __name__ == '__main__':
 
@@ -17,9 +17,9 @@ if __name__ == '__main__':
         opf =pickle.load(f)
     f.close()
 
-    dataloader = dataloader.spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                    path='/home/ubuntu/data/UCF101/spatial_no_sampled/', 
-                                    ucf_list='/home/ubuntu/cvlab/pytorch/ucf101_two_stream/github/UCF_list/',
+    dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
+                                    path='data/UCF101/spatial_no_sampled/', 
+                                    ucf_list='../UCF_list/',
                                     ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
 

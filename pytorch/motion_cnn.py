@@ -18,7 +18,7 @@ from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from utils import accuracy, AverageMeter, save_checkpoint, record_info
-from pytorch_resnet_zoo import resnet101
+from resnet import resnet101
 from dataloader import motion_dataloader as motion_dataloader
 
 

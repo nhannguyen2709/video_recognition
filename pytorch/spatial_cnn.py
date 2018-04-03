@@ -16,9 +16,9 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from dataloader import spatial_dataloader as spatial_dataloader
-from utils import *
-from pytorch_resnet_zoo import resnet101
+from dataloader.spatial_dataloader import spatial_dataloader
+from utils import accuracy, AverageMeter, save_checkpoint, record_info
+from resnet import resnet101
 
 parser = argparse.ArgumentParser(description='UCF101 spatial stream on resnet101')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
@@ -34,11 +34,11 @@ def main():
     print(arg)
 
     #Prepare DataLoader
-    data_loader = spatial_dataloader.spatial_dataloader(BATCH_SIZE=arg.batch_size,
-                                    num_workers=4,
-                                    path='data/UCF101/spatial_no_sampled/',
-                                    ucf_list ='UCF_list/',
-                                    ucf_split ='01')
+    data_loader = spatial_dataloader(BATCH_SIZE=arg.batch_size,
+                                     num_workers=4,
+                                     path='data/UCF101/spatial_no_sampled/',
+                                     ucf_list ='UCF_list/',
+                                     ucf_split ='01')
     
     train_loader, test_loader, test_video = data_loader.run()
     #Model 
