@@ -6,7 +6,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
 from dataloader.keras_data import VideosFrames, VideosPoses
-from keras_model import VGG19_SpatialTemporalGRU, MotionTemporalGRU
+from keras_models import VGG19_SpatialTemporalGRU, MotionTemporalGRU
 
 # limit tensorflow's memory usage
 # import tensorflow as tf
