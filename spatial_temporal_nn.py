@@ -15,16 +15,17 @@ from keras_model import VGG19_SpatialTemporalGRU, MotionTemporalGRU
 # config.gpu_options.per_process_gpu_memory_fraction = 0.2
 # set_session(tf.Session(config=config))
 
-parser = argparse.ArgumentParser(description='Training and evaluating model')
+parser = argparse.ArgumentParser(description='Training the spatial temporal network')
 parser.add_argument('--epochs', default=500, type=int, metavar='N', help='number of total epochs')
 parser.add_argument('--batch-size', default=4, type=int, metavar='N', help='mini-batch size (default: 16)')
 parser.add_argument('--num-frames-sampled', default=32, type=int, metavar='N', help='number of frames sampled from a single video')
-parser.add_argument('--learning-rate', default=1e-3, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument('--train-learning-rate', default=1e-3, type=float, metavar='LR', help='learning rate of train stage')
+parser.add_argument('--finetune-learning-rate', default=1e-5, type=float, metavar='LR', help='learning rate of finetune stage')
 parser.add_argument('--checkpoint-path', default='checkpoint/weights.{epoch:02d}-{val_loss:.2f}.hdf5', type=str, metavar='PATH', help='path to latest checkpoint')
 parser.add_argument('--num-workers', default=4, type=int, metavar='N', help='maximum number of processes to spin up')
 parser.add_argument('--initial-epoch', default=0, type=int, metavar='N', help='manual epoch number (useful on restarts)')
 
-def train_spatial():
+def train():
     global args
     args = parser.parse_args()
     print(args)
@@ -38,19 +39,19 @@ def train_spatial():
                                             batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
 
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3), 
-                                     classes=7)
+                                     classes=7, finetune_conv_layers=False)
 
     if os.path.exists('checkpoint/weights.best.hdf5'):
         model.load_weights('checkpoint/weights.best.hdf5')
     model.summary()
-    model.compile(optimizer=Adam(lr=args.learning_rate), 
+    model.compile(optimizer=Adam(lr=args.train_learning_rate), 
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='val_acc', verbose=1, 
-                                 mode='max', period=10)
-    early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=7)
+                                 mode='max', period=5)
+    early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=10)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=5, min_lr=0.001)
     save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
@@ -87,4 +88,4 @@ def train_spatial():
 
 
 if __name__=='__main__':
-    train_spatial()
+    train()
