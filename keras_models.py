@@ -17,7 +17,7 @@ def MotionTemporalGRU(poses_input_shape, classes):
     return model
 
 
-def VGG16_SpatialTemporalGRU(frames_input_shape, classes):
+def VGG16_SpatialTemporalGRU(frames_input_shape, classes, finetune_conv_layers):
     frames = Input(shape=frames_input_shape, name='frames')
     # Block 1
     frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1'))(frames)
@@ -59,12 +59,13 @@ def VGG16_SpatialTemporalGRU(frames_input_shape, classes):
     vgg16 = VGG16(include_top=False, input_shape=frames_input_shape[1:])
     for i, layer in enumerate(vgg16.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
-        model.layers[i].trainable = False  
+        if finetune_conv_layers == False:
+            model.layers[i].trainable = False  
 
     return model
 
 
-def VGG19_SpatialTemporalGRU(frames_input_shape, classes):
+def VGG19_SpatialTemporalGRU(frames_input_shape, classes, finetune_conv_layers):
     frames = Input(shape=frames_input_shape, name='frames')
     # Block 1
     frames_features = TimeDistributed(Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1'))(frames)
@@ -108,7 +109,8 @@ def VGG19_SpatialTemporalGRU(frames_input_shape, classes):
     vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
-        model.layers[i].trainable = False  
+        if finetune_conv_layers == False:
+            model.layers[i].trainable = False  
 
     return model
 
