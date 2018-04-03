@@ -157,7 +157,7 @@ class spatial_dataloader():
 if __name__ == '__main__':
     
     dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                    path='data/UCF101/spatial_no_sampled/', 
+                                    path='../data/UCF101/spatial_no_sampled/', 
                                     ucf_list='UCF_list/',
                                     ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
