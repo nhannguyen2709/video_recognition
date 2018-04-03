@@ -6,15 +6,14 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
 from keras.backend import tensorflow_backend as K
-from dataloader.keras_data import VideosFrames, VideosPoses
+from dataloader.keras_data import VideosFrames
 from keras_models import VGG19_SpatialTemporalGRU
 
 # limit tensorflow's memory usage
 # import tensorflow as tf
-# from keras.backend.tensorflow_backend import set_session
 # config = tf.ConfigProto()
 # config.gpu_options.per_process_gpu_memory_fraction = 0.2
-# set_session(tf.Session(config=config))
+# K.set_session(tf.Session(config=config))
 
 parser = argparse.ArgumentParser(description='Training the spatial temporal network')
 parser.add_argument('--epochs', default=500, 
