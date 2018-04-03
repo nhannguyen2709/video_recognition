@@ -5,6 +5,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]="3"
 
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
+from keras.backend import tensorflow_backend as K
 from dataloader.keras_data import VideosFrames, VideosPoses
 from keras_models import VGG19_SpatialTemporalGRU, MotionTemporalGRU
 
@@ -49,8 +50,8 @@ def train():
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3), 
                                      classes=7, finetune_conv_layers=False)
 
-    if os.path.exists('checkpoint/weights.best.hdf5'):
-        model.load_weights('checkpoint/weights.best.hdf5')
+    if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
+        model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
     model.compile(optimizer=Adam(lr=args.train_learning_rate), 
                   loss='categorical_crossentropy',
@@ -62,7 +63,7 @@ def train():
     early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
-    save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
+    save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
                                 monitor='val_acc', verbose=1, 
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
@@ -73,10 +74,6 @@ def train():
 
 
 def train_with_finetune():
-    global args
-    args = parser.parse_args()
-    print(args)
-
     train_videos_frames = VideosFrames(data_path='data/NewVideos/train_videos/',
                                        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
                                        batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
@@ -88,8 +85,8 @@ def train_with_finetune():
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3), 
                                      classes=7, finetune_conv_layers=True)
 
-    if os.path.exists('checkpoint/weights.best.hdf5'):
-        model.load_weights('checkpoint/weights.best.hdf5')
+    if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
+        model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
     model.compile(optimizer=Adam(lr=args.finetune_learning_rate), 
                   loss='categorical_crossentropy',
@@ -101,7 +98,7 @@ def train_with_finetune():
     early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
-    save_best = ModelCheckpoint('checkpoint/weights.best.hdf5',
+    save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
                                 monitor='val_acc', verbose=1, 
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
@@ -113,4 +110,5 @@ def train_with_finetune():
 
 if __name__=='__main__':
     train()
+    K.clear_session()
     train_with_finetune()
