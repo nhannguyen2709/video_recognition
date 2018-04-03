@@ -3,11 +3,12 @@ import numpy as np
 import pickle
 
 from cv2 import resize, imread
+from sklearn.utils import shuffle
 from keras.utils import Sequence, to_categorical
 
 
 class VideosFrames(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7):
+    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path =data_path
         self.frame_counts_path = frame_counts_path
         video_filenames = sorted(os.listdir(self.data_path))
@@ -19,6 +20,12 @@ class VideosFrames(Sequence):
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
+
+    def on_epoch_end(self):
+        if self.shuffle == True:
+            self.x, self.y = shuffle(self.x, self.y)
 
     def labels_to_idxs(self, video_filenames):
         idxs = []
@@ -61,7 +68,7 @@ class VideosFrames(Sequence):
 
 
 class VideosPoses(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7):
+    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path =data_path
         self.frame_counts_path = frame_counts_path
         video_filenames = sorted(os.listdir(self.data_path))
@@ -73,7 +80,13 @@ class VideosPoses(Sequence):
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
 
+    def on_epoch_end(self):
+        if self.shuffle == True:
+            self.x, self.y = shuffle(self.x, self.y)
+        
     def labels_to_idxs(self, video_filenames):
         idxs = []
         for video_filename in video_filenames:
