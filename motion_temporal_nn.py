@@ -24,9 +24,7 @@ parser.add_argument('--num-frames-sampled', default=32,
     type=int, metavar='N', help='number of frames sampled from a single video')
 parser.add_argument('--train-learning-rate', default=1e-3, 
     type=float, metavar='LR', help='learning rate of train stage')
-parser.add_argument('--finetune-learning-rate', default=1e-5, 
-    type=float, metavar='LR', help='learning rate of finetune stage')
-parser.add_argument('--checkpoint-path', default='checkpoint/motion_temporal/weights.{epoch:02d}-{val_loss:.2f}.hdf5', 
+parser.add_argument('--checkpoint-path', default='checkpoint/motion_temporal/weights.{epoch:02d}-{val_acc:.4f}.hdf5', 
     type=str, metavar='PATH', help='path to latest checkpoint')
 parser.add_argument('--num-workers', default=4, 
     type=int, metavar='N', help='maximum number of processes to spin up')
