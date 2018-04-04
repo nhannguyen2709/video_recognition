@@ -55,12 +55,17 @@ def VGG16_SpatialTemporalGRU(frames_input_shape, classes, finetune_conv_layers):
                     name='predictions')(frames_features)
     model = Model(inputs=frames_features, outputs=outputs)
 
-    # Overload model's weights with the pre-trained ImageNet weights of VGG19
+    # Overload model's weights with the pre-trained ImageNet weights of VGG16
     vgg16 = VGG16(include_top=False, input_shape=frames_input_shape[1:])
     for i, layer in enumerate(vgg16.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
         if finetune_conv_layers == False:
             model.layers[i].trainable = False  
+    
+    # Finetune the last 2 convolutional layers in block 5 of VGG16
+    if finetune_conv_layers == True:
+        model.layers[-5].trainable = True
+        model.layers[-6].trainable = True
 
     return model
 
@@ -109,8 +114,12 @@ def VGG19_SpatialTemporalGRU(frames_input_shape, classes, finetune_conv_layers):
     vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
-        if finetune_conv_layers == False:
-            model.layers[i].trainable = False  
+        model.layers[i].trainable = False  
+
+    # Finetune the last 2 convolutional layers in block 5 of VGG19
+    if finetune_conv_layers == True:
+        model.layers[-5].trainable = True
+        model.layers[-6].trainable = True
 
     return model
 
