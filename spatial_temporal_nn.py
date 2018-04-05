@@ -44,7 +44,8 @@ def train():
     
     validation_videos_frames = VideosFrames(data_path='data/NewVideos/validation_videos',
                                             frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled,
+                                            shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3), 
                                      classes=7, finetune_conv_layers=False)
@@ -63,7 +64,7 @@ def train():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
     save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
-                                monitor='val_acc', verbose=1, 
+                                monitor='train_loss', verbose=1, 
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, reduce_lr]
 
@@ -79,7 +80,8 @@ def train_with_finetune():
     
     validation_videos_frames = VideosFrames(data_path='data/NewVideos/validation_videos',
                                             frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled,
+                                            shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3), 
                                      classes=7, finetune_conv_layers=True)
@@ -98,7 +100,7 @@ def train_with_finetune():
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
     save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
-                                monitor='val_acc', verbose=1, 
+                                monitor='train_loss', verbose=1, 
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, reduce_lr]
 

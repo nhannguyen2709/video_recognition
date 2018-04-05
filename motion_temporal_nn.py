@@ -42,7 +42,8 @@ def train():
     
     validation_video_poses = VideosPoses(data_path='data/NewVideos/validation_videos',
                                          frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                         batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+                                         batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled,
+                                         shuffle=False)
 
     model = MotionTemporalGRU(poses_input_shape=(args.num_frames_sampled, 54), 
                               classes=7)
