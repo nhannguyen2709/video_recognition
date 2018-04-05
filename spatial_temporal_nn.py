@@ -22,9 +22,9 @@ parser.add_argument('--batch-size', default=4,
     type=int, metavar='N', help='mini-batch size (default: 16)')
 parser.add_argument('--num-frames-sampled', default=32, 
     type=int, metavar='N', help='number of frames sampled from a single video')
-parser.add_argument('--train-learning-rate', default=1e-3, 
+parser.add_argument('--train-lr', default=1e-3, 
     type=float, metavar='LR', help='learning rate of train stage')
-parser.add_argument('--finetune-learning-rate', default=1e-5, 
+parser.add_argument('--finetune-lr', default=1e-5, 
     type=float, metavar='LR', help='learning rate of finetune stage')
 parser.add_argument('--checkpoint-path', default='checkpoint/spatial_temporal/weights.{epoch:02d}-{val_acc:.4f}.hdf5', 
     type=str, metavar='PATH', help='path to latest checkpoint')
@@ -52,20 +52,20 @@ def train():
     if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
         model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
-    model.compile(optimizer=Adam(lr=args.train_learning_rate), 
+    model.compile(optimizer=Adam(lr=args.train_lr), 
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='val_acc', verbose=1, 
                                  mode='max', period=15)
-    early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
+    # early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
     save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
                                 monitor='val_acc', verbose=1, 
                                 save_best_only=True, mode='max')
-    callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
+    callbacks = [checkpoint, save_best, reduce_lr]
 
     model.fit_generator(generator=train_videos_frames, epochs=args.epochs, 
                         callbacks=callbacks, validation_data=validation_videos_frames,
@@ -87,20 +87,20 @@ def train_with_finetune():
     if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
         model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
-    model.compile(optimizer=Adam(lr=args.finetune_learning_rate), 
+    model.compile(optimizer=Adam(lr=args.finetune_lr), 
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='val_acc', verbose=1, 
                                  mode='max', period=15)
-    early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
+    # early_stopping = EarlyStopping(monitor='val_acc', mode='max', patience=50)
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                   patience=15, min_lr=0.001)
     save_best = ModelCheckpoint('checkpoint/spatial_temporal/weights.best.hdf5',
                                 monitor='val_acc', verbose=1, 
                                 save_best_only=True, mode='max')
-    callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
+    callbacks = [checkpoint, save_best, reduce_lr]
 
     model.fit_generator(generator=train_videos_frames, epochs=args.epochs, 
                         callbacks=callbacks, validation_data=validation_videos_frames,

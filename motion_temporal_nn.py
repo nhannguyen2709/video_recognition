@@ -15,14 +15,14 @@ from keras_models import MotionTemporalGRU
 # config.gpu_options.per_process_gpu_memory_fraction = 0.2
 # K.set_session(tf.Session(config=config))
 
-parser = argparse.ArgumentParser(description='Training the spatial temporal network')
+parser = argparse.ArgumentParser(description='Training the motion temporal network')
 parser.add_argument('--epochs', default=500, 
     type=int, metavar='N', help='number of total epochs')
 parser.add_argument('--batch-size', default=16, 
     type=int, metavar='N', help='mini-batch size (default: 16)')
 parser.add_argument('--num-frames-sampled', default=32, 
     type=int, metavar='N', help='number of frames sampled from a single video')
-parser.add_argument('--train-learning-rate', default=1e-3, 
+parser.add_argument('--train-lr', default=1e-3, 
     type=float, metavar='LR', help='learning rate of train stage')
 parser.add_argument('--checkpoint-path', default='checkpoint/motion_temporal/weights.{epoch:02d}-{val_acc:.4f}.hdf5', 
     type=str, metavar='PATH', help='path to latest checkpoint')
@@ -50,7 +50,7 @@ def train():
     if os.path.exists('checkpoint/motion_temporal/weights.best.hdf5'):
         model.load_weights('checkpoint/motion_temporal/weights.best.hdf5')
     model.summary()
-    model.compile(optimizer=Adam(lr=args.train_learning_rate), 
+    model.compile(optimizer=Adam(lr=args.train_lr), 
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
