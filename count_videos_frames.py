@@ -23,5 +23,3 @@ with open('dataloader/dic/ucf101_frame_count.pickle', 'wb') as handle:
     pickle.dump(ucf101, handle, protocol=pickle.HIGHEST_PROTOCOL)
 with open('dataloader/dic/merged_frame_count.pickle', 'wb') as handle:
     pickle.dump(merged, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
