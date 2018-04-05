@@ -27,7 +27,7 @@ colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0]
           [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
 
 
-def process (input_image, params, model_params):
+def process(input_image, params, model_params):
 
     oriImg = cv2.imread(input_image)  # B,G,R order
     multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
@@ -227,6 +227,7 @@ def process (input_image, params, model_params):
     return canvas
 
 if __name__ == '__main__':
+    import os
     parser = argparse.ArgumentParser()
     parser.add_argument('--image', type=str, required=True, help='input image')
     parser.add_argument('--output', type=str, default='result.png', help='output image')
@@ -234,32 +235,30 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     input_image = args.image
-    output = args.output
-    keras_weights_file = args.model
+    if os.path.exists(input_image):
+        output = args.output
+        keras_weights_file = args.model
 
-    tic = time.time()
-    print('start processing...')
+        tic = time.time()
+        print('start processing...')
 
-    # load model
+        # load model
 
-    # authors of original model don't use
-    # vgg normalization (subtracting mean) on input images
-    model = get_testing_model()
-    model.load_weights(keras_weights_file)
+        # authors of original model don't use
+        # vgg normalization (subtracting mean) on input images
+        model = get_testing_model()
+        model.load_weights(keras_weights_file)
 
-    # load config
-    params, model_params = config_reader()
+        # load config
+        params, model_params = config_reader()
 
-    # generate image with body parts
-    canvas = process(input_image, params, model_params)
-    # print(canvas.shape)
+        # generate image with body parts
+        canvas = process(input_image, params, model_params)
+        # print(canvas.shape)
 
-    toc = time.time()
-    print ('processing time is %.5f' % (toc - tic))
+        toc = time.time()
+        print ('processing time is %.5f' % (toc - tic))
 
-    cv2.imwrite(output, canvas)
+        cv2.imwrite(output, canvas)
 
-    cv2.destroyAllWindows()
-
-
-
+        cv2.destroyAllWindows()
