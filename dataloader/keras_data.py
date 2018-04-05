@@ -11,12 +11,12 @@ class VideosFrames(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path =data_path
         self.frame_counts_path = frame_counts_path
-        video_filenames = sorted(os.listdir(self.data_path))
+        self.video_filenames = sorted(os.listdir(self.data_path))
         self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in video_filenames])))
+            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
         self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in video_filenames]
-        self.y = self.labels_to_idxs(video_filenames)
+                  for video_filename in self.video_filenames]
+        self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
@@ -27,9 +27,9 @@ class VideosFrames(Sequence):
         if self.shuffle == True:
             self.x, self.y = shuffle(self.x, self.y)
 
-    def labels_to_idxs(self, video_filenames):
+    def labels_to_idxs(self):
         idxs = []
-        for video_filename in video_filenames:
+        for video_filename in self.video_filenames:
             idxs.append(self.labels.index(video_filename.split('_')[1]))
         return idxs
 
@@ -71,12 +71,12 @@ class VideosPoses(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path =data_path
         self.frame_counts_path = frame_counts_path
-        video_filenames = sorted(os.listdir(self.data_path))
+        self.video_filenames = sorted(os.listdir(self.data_path))
         self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in video_filenames])))
+            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
         self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in video_filenames]
-        self.y = self.labels_to_idxs(video_filenames)
+                  for video_filename in self.video_filenames]
+        self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
@@ -87,9 +87,9 @@ class VideosPoses(Sequence):
         if self.shuffle == True:
             self.x, self.y = shuffle(self.x, self.y)
         
-    def labels_to_idxs(self, video_filenames):
+    def labels_to_idxs(self):
         idxs = []
-        for video_filename in video_filenames:
+        for video_filename in self.video_filenames:
             idxs.append(self.labels.index(video_filename.split('_')[1]))
         return idxs
 
@@ -130,12 +130,12 @@ class VideosFramesPoses(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path =data_path
         self.frame_counts_path = frame_counts_path
-        video_filenames = sorted(os.listdir(self.data_path))
+        self.video_filenames = sorted(os.listdir(self.data_path))
         self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in video_filenames])))
+            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
         self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in video_filenames]
-        self.y = self.labels_to_idxs(video_filenames)
+                  for video_filename in self.video_filenames]
+        self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
@@ -146,9 +146,9 @@ class VideosFramesPoses(Sequence):
         if self.shuffle == True:
             self.x, self.y = shuffle(self.x, self.y)
 
-    def labels_to_idxs(self, video_filenames):
+    def labels_to_idxs(self):
         idxs = []
-        for video_filename in video_filenames:
+        for video_filename in self.video_filenames:
             idxs.append(self.labels.index(video_filename.split('_')[1]))
         return idxs
 
