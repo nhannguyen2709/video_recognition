@@ -12,7 +12,7 @@ import os.path
 from os import walk
 from os.path import join
 from tqdm import tqdm
-import pandas as pd 
+import pandas as pd
 
 # limit tensorflow's memory usage
 import tensorflow as tf
@@ -23,31 +23,36 @@ set_session(tf.Session(config=config))
 
 # from configobj import ConfigObj
 # find connection in the specified sequence, center 29 is in the position 15
-limbSeq = [[2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10], \
-           [10, 11], [2, 12], [12, 13], [13, 14], [2, 1], [1, 15], [15, 17], \
+limbSeq = [[2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10],
+           [10, 11], [2, 12], [12, 13], [13, 14], [2, 1], [1, 15], [15, 17],
            [1, 16], [16, 18], [3, 17], [6, 18]]
 
 # the middle joints heatmap correpondence
-mapIdx = [[31, 32], [39, 40], [33, 34], [35, 36], [41, 42], [43, 44], [19, 20], [21, 22], \
-          [23, 24], [25, 26], [27, 28], [29, 30], [47, 48], [49, 50], [53, 54], [51, 52], \
+mapIdx = [[31, 32], [39, 40], [33, 34], [35, 36], [41, 42], [43, 44], [19, 20], [21, 22],
+          [23, 24], [25, 26], [27, 28], [29, 30], [
+              47, 48], [49, 50], [53, 54], [51, 52],
           [55, 56], [37, 38], [45, 46]]
 
 # visualize
 colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0], [85, 255, 0],
-          [0, 255, 0], \
-          [0, 255, 85], [0, 255, 170], [0, 255, 255], [0, 170, 255], [0, 85, 255], [0, 0, 255],
-          [85, 0, 255], \
+          [0, 255, 0],
+          [0, 255, 85], [0, 255, 170], [0, 255, 255], [
+              0, 170, 255], [0, 85, 255], [0, 0, 255],
+          [85, 0, 255],
           [170, 0, 255], [255, 0, 255], [255, 0, 170], [255, 0, 85]]
 
 WIDTH = 1920
 HEIGHT = 1080
-def process (input_image, params, model_params):
+
+
+def process(input_image, params, model_params):
 
     oriImg = cv2.imread(input_image)  # B,G,R order
     #************************************************
-    oriImg = cv2.resize(oriImg, (WIDTH,HEIGHT), cv2.INTER_LINEAR)
+    oriImg = cv2.resize(oriImg, (WIDTH, HEIGHT), cv2.INTER_LINEAR)
 
-    multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
+    multiplier = [x * model_params['boxsize'] / oriImg.shape[0]
+                  for x in params['scale_search']]
 
     heatmap_avg = np.zeros((oriImg.shape[0], oriImg.shape[1], 19))
     paf_avg = np.zeros((oriImg.shape[0], oriImg.shape[1], 38))
@@ -55,11 +60,14 @@ def process (input_image, params, model_params):
     for m in range(len(multiplier)):
         scale = multiplier[m]
 
-        imageToTest = cv2.resize(oriImg, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        imageToTest = cv2.resize(
+            oriImg, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
         imageToTest_padded, pad = util.padRightDownCorner(imageToTest, model_params['stride'],
                                                           model_params['padValue'])
 
-        input_img = np.transpose(np.float32(imageToTest_padded[:,:,:,np.newaxis]), (3,0,1,2)) # required shape (1, width, height, channels)
+        # required shape (1, width, height, channels)
+        input_img = np.transpose(np.float32(
+            imageToTest_padded[:, :, :, np.newaxis]), (3, 0, 1, 2))
 
         output_blobs = model.predict(input_img)
 
@@ -68,14 +76,17 @@ def process (input_image, params, model_params):
         heatmap = cv2.resize(heatmap, (0, 0), fx=model_params['stride'], fy=model_params['stride'],
                              interpolation=cv2.INTER_CUBIC)
         heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3],
-                  :]
-        heatmap = cv2.resize(heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
+                          :]
+        heatmap = cv2.resize(
+            heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
 
         paf = np.squeeze(output_blobs[0])  # output 0 is PAFs
         paf = cv2.resize(paf, (0, 0), fx=model_params['stride'], fy=model_params['stride'],
                          interpolation=cv2.INTER_CUBIC)
-        paf = paf[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
-        paf = cv2.resize(paf, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
+        paf = paf[:imageToTest_padded.shape[0] - pad[2],
+                  :imageToTest_padded.shape[1] - pad[3], :]
+        paf = cv2.resize(
+            paf, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv2.INTER_CUBIC)
 
         heatmap_avg = heatmap_avg + heatmap / len(multiplier)
         paf_avg = paf_avg + paf / len(multiplier)
@@ -98,10 +109,12 @@ def process (input_image, params, model_params):
 
         peaks_binary = np.logical_and.reduce(
             (map >= map_left, map >= map_right, map >= map_up, map >= map_down, map > params['thre1']))
-        peaks = list(zip(np.nonzero(peaks_binary)[1], np.nonzero(peaks_binary)[0]))  # note reverse
+        peaks = list(zip(np.nonzero(peaks_binary)[1], np.nonzero(
+            peaks_binary)[0]))  # note reverse
         peaks_with_score = [x + (map_ori[x[1], x[0]],) for x in peaks]
         id = range(peak_counter, peak_counter + len(peaks))
-        peaks_with_score_and_id = [peaks_with_score[i] + (id[i],) for i in range(len(id))]
+        peaks_with_score_and_id = [
+            peaks_with_score[i] + (id[i],) for i in range(len(id))]
 
         all_peaks.append(peaks_with_score_and_id)
         peak_counter += len(peaks)
@@ -128,17 +141,18 @@ def process (input_image, params, model_params):
                         continue
                     vec = np.divide(vec, norm)
 
-                    startend = list(zip(np.linspace(candA[i][0], candB[j][0], num=mid_num), \
-                                   np.linspace(candA[i][1], candB[j][1], num=mid_num)))
+                    startend = list(zip(np.linspace(candA[i][0], candB[j][0], num=mid_num),
+                                        np.linspace(candA[i][1], candB[j][1], num=mid_num)))
 
                     vec_x = np.array(
-                        [score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 0] \
+                        [score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 0]
                          for I in range(len(startend))])
                     vec_y = np.array(
-                        [score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 1] \
+                        [score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 1]
                          for I in range(len(startend))])
 
-                    score_midpts = np.multiply(vec_x, vec[0]) + np.multiply(vec_y, vec[1])
+                    score_midpts = np.multiply(
+                        vec_x, vec[0]) + np.multiply(vec_y, vec[1])
                     score_with_dist_prior = sum(score_midpts) / len(score_midpts) + min(
                         0.5 * oriImg.shape[0] / norm - 1, 0)
                     criterion1 = len(np.nonzero(score_midpts > params['thre2'])[0]) > 0.8 * len(
@@ -148,12 +162,14 @@ def process (input_image, params, model_params):
                         connection_candidate.append([i, j, score_with_dist_prior,
                                                      score_with_dist_prior + candA[i][2] + candB[j][2]])
 
-            connection_candidate = sorted(connection_candidate, key=lambda x: x[2], reverse=True)
+            connection_candidate = sorted(
+                connection_candidate, key=lambda x: x[2], reverse=True)
             connection = np.zeros((0, 5))
             for c in range(len(connection_candidate)):
                 i, j, s = connection_candidate[c][0:3]
                 if (i not in connection[:, 3] and j not in connection[:, 4]):
-                    connection = np.vstack([connection, [candA[i][3], candB[j][3], s, i, j]])
+                    connection = np.vstack(
+                        [connection, [candA[i][3], candB[j][3], s, i, j]])
                     if (len(connection) >= min(nA, nB)):
                         break
 
@@ -186,10 +202,12 @@ def process (input_image, params, model_params):
                     if (subset[j][indexB] != partBs[i]):
                         subset[j][indexB] = partBs[i]
                         subset[j][-1] += 1
-                        subset[j][-2] += candidate[partBs[i].astype(int), 2] + connection_all[k][i][2]
+                        subset[j][-2] += candidate[partBs[i].astype(
+                            int), 2] + connection_all[k][i][2]
                 elif found == 2:  # if found 2 and disjoint, merge them
                     j1, j2 = subset_idx
-                    membership = ((subset[j1] >= 0).astype(int) + (subset[j2] >= 0).astype(int))[:-2]
+                    membership = ((subset[j1] >= 0).astype(
+                        int) + (subset[j2] >= 0).astype(int))[:-2]
                     if len(np.nonzero(membership == 2)[0]) == 0:  # merge
                         subset[j1][:-2] += (subset[j2][:-2] + 1)
                         subset[j1][-2:] += subset[j2][-2:]
@@ -198,7 +216,8 @@ def process (input_image, params, model_params):
                     else:  # as like found == 1
                         subset[j1][indexB] = partBs[i]
                         subset[j1][-1] += 1
-                        subset[j1][-2] += candidate[partBs[i].astype(int), 2] + connection_all[k][i][2]
+                        subset[j1][-2] += candidate[partBs[i].astype(
+                            int), 2] + connection_all[k][i][2]
 
                 # if find no partA in the subset, create a new subset
                 elif not found and k < 17:
@@ -207,7 +226,7 @@ def process (input_image, params, model_params):
                     row[indexB] = partBs[i]
                     row[-1] = 2
                     row[-2] = sum(candidate[connection_all[k][i, :2].astype(int), 2]) + \
-                              connection_all[k][i][2]
+                        connection_all[k][i][2]
                     subset = np.vstack([subset, row])
 
     # delete some rows of subset which has few parts occur
@@ -220,7 +239,8 @@ def process (input_image, params, model_params):
     canvas = cv2.imread(input_image)  # B,G,R order
     for i in range(18):
         for j in range(len(all_peaks[i])):
-            cv2.circle(canvas, all_peaks[i][j][0:2], 4, colors[i], thickness=-1)
+            cv2.circle(canvas, all_peaks[i][j][0:2],
+                       4, colors[i], thickness=-1)
 
     stickwidth = 4
 
@@ -243,11 +263,15 @@ def process (input_image, params, model_params):
 
     return canvas, all_peaks
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input-folder', type=str, default='dataset/jpegs_256', help='input folder')
-    parser.add_argument('--output-folder', type=str, default='outputs/', help='output folder')
-    parser.add_argument('--model', type=str, default='model/keras/model.h5', help='path to the weights file')
+    parser.add_argument('--input-folder', type=str,
+                        default='dataset/jpegs_256', help='input folder')
+    parser.add_argument('--output-folder', type=str,
+                        default='outputs/', help='output folder')
+    parser.add_argument(
+        '--model', type=str, default='model/keras/model.h5', help='path to the weights file')
 
     args = parser.parse_args()
 
@@ -257,7 +281,7 @@ if __name__ == '__main__':
     model.load_weights(args.model)
     # params, model_params = config_reader()
     # config = ConfigObj('config')
-    
+
     tic = time.time()
     print('start processing...')
     for (path, subdirs, files) in sorted(walk(args.input_folder)):
@@ -265,10 +289,10 @@ if __name__ == '__main__':
         outfile = os.path.join(path, 'poses')
         if not os.path.isfile(outfile + '.npy'):
             files = sorted(files)
-            poses = np.array([], dtype=np.int64).reshape(0,18,3)
+            poses = np.array([], dtype=np.int64).reshape(0, 18, 3)
             # print(poses.shape)
             for file in tqdm(files):
-            # for file in files:
+                # for file in files:
                 fn, fe = os.path.splitext(file)
                 if fe in itype:
                     params, model_params = config_reader()
@@ -277,14 +301,15 @@ if __name__ == '__main__':
                     canvas, all_peaks = process(img_path, params, model_params)
 
                     # print(np.array(all_peaks).shape)
-                    if np.array(all_peaks).size >18:
-                        pose = np.array(all_peaks)[:,0,0:3] # 0 to extract one person's pose, : multi people
-                        pose[:,0] = pose[:,0]/float(WIDTH)
-                        pose[:,1] = pose[:,1]/float(HEIGHT)
+                    if np.array(all_peaks).size > 18:
+                        # 0 to extract one person's pose, : multi people
+                        pose = np.array(all_peaks)[:, 0, 0:3]
+                        pose[:, 0] = pose[:, 0]/float(WIDTH)
+                        pose[:, 1] = pose[:, 1]/float(HEIGHT)
                     else:
-                        pose = np.empty((18,3))
+                        pose = np.empty((18, 3))
                         pose[:] = np.nan
-                    pose = pose.reshape(1,pose.shape[0], pose.shape[1])
+                    pose = pose.reshape(1, pose.shape[0], pose.shape[1])
                     poses = np.vstack([poses, pose])
 
             np.save(outfile, poses)
