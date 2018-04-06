@@ -15,20 +15,17 @@ parser.add_argument('--input-loc', default='data/test_videos/C0126.MP4',
 parser.add_argument('--output-loc', default='outputs/action_no_pose.avi',
                     type=str, metavar='PATH', help='output video')
 parser.add_argument('--num-frames', default=256,
-<<<<<<< HEAD
     type=int, metavar='N', help='number of frames used to recognize action')
 parser.add_argument('--start-frame', default=100,
     type=int, metavar='N', help='frame to start capturing for predicting action')
 
-=======
-                    type=int, metavar='N', help='number of frames used to recognize action')
->>>>>>> 1414cb278b669bcea1c80615a343cbc8b90f6b8e
+                    type = int, metavar = 'N', help = 'number of frames used to recognize action')
 
 if __name__ == '__main__':
     global args
-    args = parser.parse_args()
+    args=parser.parse_args()
 
-    labels = ['ApplyEyeMakeup', 'ApplyLipstick', 'Archery',
+    labels=['ApplyEyeMakeup', 'ApplyLipstick', 'Archery',
               'BabyCrawling', 'PickUpObject', 'TakeOffJacket', 'TakeOffShoes']
     model = VGG19_SpatialTemporalGRU(frames_input_shape=(
         args.num_frames, 224, 224, 3), classes=7)
@@ -41,45 +38,25 @@ if __name__ == '__main__':
     time_start = time.time()
     cap = cv2.VideoCapture(os.path.join(args.input_loc, ))
     true_action = args.input_loc.split('/')[-1]
-<<<<<<< HEAD
     out = cv2.VideoWriter(args.output_loc, cv2.VideoWriter_fourcc('M','J','P','G'), 10, output_video_size)
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1  
     print('Video has {} frames'.format(video_length))
-=======
-    out = cv2.VideoWriter(args.output_loc, cv2.VideoWriter_fourcc(
-        'M', 'J', 'P', 'G'), 10, output_video_size)
-    video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1
->>>>>>> 1414cb278b669bcea1c80615a343cbc8b90f6b8e
     count = 0
     i = 0
     while(cap.isOpened()):
-<<<<<<< HEAD
         _, frame = cap.read()     
-=======
-        _, frame = cap.read()
-
->>>>>>> 1414cb278b669bcea1c80615a343cbc8b90f6b8e
         resized_frame = cv2.resize(frame, (224, 224))
         
         if args.start_frame < count < args.start_frame + args.num_frames:
             videos_frames[:, i, :, :, :] = resized_frame
             i += 1
             prev_label = "True action: {}".format('TakeOffShoes')
-<<<<<<< HEAD
             cv2.putText(frame, prev_label, (30, args.start_frame), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
         
         count = count + 1
         
         if count == args.start_frame + args.num_frames - 1:
             softmax_pred = model.predict(videos_frames, batch_size=50, verbose=1)
-=======
-            cv2.putText(frame, prev_label, (30, 100),
-                        cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
-        count = count + 1
-        if count == args.num_frames - 1:
-            softmax_pred = model.predict(
-                videos_frames, batch_size=50, verbose=1)
->>>>>>> 1414cb278b669bcea1c80615a343cbc8b90f6b8e
             pred = np.argmax(softmax_pred)
         
         if count > args.start_frame + args.num_frames:

@@ -20,20 +20,48 @@ parser = argparse.ArgumentParser(
     description='Training the network using both frames and poses')
 parser.add_argument('--epochs', default=500,
                     type=int, metavar='N', help='number of total epochs')
-parser.add_argument('--batch-size', default=4,
-                    type=int, metavar='N', help='mini-batch size (default: 16)')
-parser.add_argument('--num-frames-sampled', default=32,
-                    type=int, metavar='N', help='number of frames sampled from a single video')
-parser.add_argument('--train-lr', default=1e-3,
-                    type=float, metavar='LR', help='learning rate of train stage')
-parser.add_argument('--finetune-lr', default=1e-5,
-                    type=float, metavar='LR', help='learning rate of finetune stage')
-parser.add_argument('--checkpoint-path', default='checkpoint/frames_poses/weights.{epoch:02d}-{val_acc:.4f}.hdf5',
-                    type=str, metavar='PATH', help='path to latest checkpoint')
-parser.add_argument('--num-workers', default=4,
-                    type=int, metavar='N', help='maximum number of processes to spin up')
-parser.add_argument('--initial-epoch', default=0,
-                    type=int, metavar='N', help='manual epoch number (useful on restarts)')
+parser.add_argument(
+    '--batch-size',
+    default=4,
+    type=int,
+    metavar='N',
+    help='mini-batch size (default: 16)')
+parser.add_argument(
+    '--num-frames-sampled',
+    default=32,
+    type=int,
+    metavar='N',
+    help='number of frames sampled from a single video')
+parser.add_argument(
+    '--train-lr',
+    default=1e-3,
+    type=float,
+    metavar='LR',
+    help='learning rate of train stage')
+parser.add_argument(
+    '--finetune-lr',
+    default=1e-5,
+    type=float,
+    metavar='LR',
+    help='learning rate of finetune stage')
+parser.add_argument(
+    '--checkpoint-path',
+    default='checkpoint/frames_poses/weights.{epoch:02d}-{val_acc:.4f}.hdf5',
+    type=str,
+    metavar='PATH',
+    help='path to latest checkpoint')
+parser.add_argument(
+    '--num-workers',
+    default=4,
+    type=int,
+    metavar='N',
+    help='maximum number of processes to spin up')
+parser.add_argument(
+    '--initial-epoch',
+    default=0,
+    type=int,
+    metavar='N',
+    help='manual epoch number (useful on restarts)')
 
 
 def train():
@@ -41,18 +69,22 @@ def train():
     args = parser.parse_args()
     print(args)
 
-    train_videos_frames = VideosFramesPoses(data_path='data/NewVideos/train_videos/',
-                                            frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+    train_videos_frames = VideosFramesPoses(
+        data_path='data/NewVideos/train_videos/',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled)
 
-    validation_videos_frames = VideosFramesPoses(data_path='data/NewVideos/validation_videos',
-                                                 frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                                 batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+    validation_videos_frames = VideosFramesPoses(
+        data_path='data/NewVideos/validation_videos',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled)
 
-    model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3),
-                                           poses_input_shape=(
-                                               args.num_frames_sampled, 54),
-                                           classes=7, finetune_conv_layers=False)
+    model = VGG19_SpatialMotionTemporalGRU(
+        frames_input_shape=(
+            args.num_frames_sampled, 224, 224, 3), poses_input_shape=(
+            args.num_frames_sampled, 54), classes=7, finetune_conv_layers=False)
 
     if os.path.exists('checkpoint/frames_poses/weights.best.hdf5'):
         model.load_weights('checkpoint/frames_poses/weights.best.hdf5')
@@ -72,24 +104,32 @@ def train():
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
 
-    model.fit_generator(generator=train_videos_frames, epochs=args.epochs,
-                        callbacks=callbacks, validation_data=validation_videos_frames,
-                        workers=args.num_workers, initial_epoch=args.initial_epoch)
+    model.fit_generator(
+        generator=train_videos_frames,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        validation_data=validation_videos_frames,
+        workers=args.num_workers,
+        initial_epoch=args.initial_epoch)
 
 
 def train_with_finetune():
-    train_videos_frames = VideosFramesPoses(data_path='data/NewVideos/train_videos/',
-                                            frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                            batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+    train_videos_frames = VideosFramesPoses(
+        data_path='data/NewVideos/train_videos/',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled)
 
-    validation_videos_frames = VideosFramesPoses(data_path='data/NewVideos/validation_videos',
-                                                 frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-                                                 batch_size=args.batch_size, num_frames_sampled=args.num_frames_sampled)
+    validation_videos_frames = VideosFramesPoses(
+        data_path='data/NewVideos/validation_videos',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled)
 
-    model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(args.num_frames_sampled, 224, 224, 3),
-                                           poses_input_shape=(
-                                               args.num_frames_sampled, 54),
-                                           classes=7, finetune_conv_layers=True)
+    model = VGG19_SpatialMotionTemporalGRU(
+        frames_input_shape=(
+            args.num_frames_sampled, 224, 224, 3), poses_input_shape=(
+            args.num_frames_sampled, 54), classes=7, finetune_conv_layers=True)
 
     if os.path.exists('checkpoint/frames_poses/weights.best.hdf5'):
         model.load_weights('checkpoint/frames_poses/weights.best.hdf5')
@@ -109,9 +149,13 @@ def train_with_finetune():
                                 save_best_only=True, mode='max')
     callbacks = [checkpoint, save_best, early_stopping, reduce_lr]
 
-    model.fit_generator(generator=train_videos_frames, epochs=args.epochs,
-                        callbacks=callbacks, validation_data=validation_videos_frames,
-                        workers=args.num_workers, initial_epoch=args.initial_epoch)
+    model.fit_generator(
+        generator=train_videos_frames,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        validation_data=validation_videos_frames,
+        workers=args.num_workers,
+        initial_epoch=args.initial_epoch)
 
 
 if __name__ == '__main__':
