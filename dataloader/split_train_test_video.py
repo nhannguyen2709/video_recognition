@@ -59,8 +59,35 @@ class UCF101_splitter():
         return dic2
 
 if __name__ == '__main__':
-    path = 'UCF_list/'
-    split = '01'
-    splitter = UCF101_splitter(path=path,split=split)
-    train_video,test_video = splitter.split_video()
-    print(len(train_video),len(test_video))
+    import shutil
+
+    def copytree(src, dst, symlinks=False, ignore=None):
+        if not os.path.exists(dst):
+            os.makedirs(dst)
+        for item in os.listdir(src):
+            s = os.path.join(src, item)
+            d = os.path.join(dst, item)
+            if os.path.isdir(s):
+                copytree(s, d, symlinks, ignore)
+            else:
+                if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+                    shutil.copy2(s, d)
+
+    splits = ['01', '02', '03']
+    path = '../UCF_list/'
+    
+    for split in splits:
+        splitter = UCF101_splitter(path=path,split=split)
+        train_video,test_video = splitter.split_video()
+        print(len(train_video),len(test_video))
+        
+        train_dst = '../data/train_videos_' + split
+        test_dst = '../data/test_videos_' + split
+
+        for train_video, test_video in zip(train_video.keys(), test_video.keys()):
+            train_video_name = 'v_' + train_video
+            copytree(os.path.join('../data/UCF101/jpegs_256/', train_video_name), 
+                     os.path.join(train_dst, train_video_name))
+            test_video_name = 'v_' + test_video
+            copytree(os.path.join('../data/UCF101/jpegs_256/', test_video_name), 
+                     os.path.join(test_dst, test_video_name))

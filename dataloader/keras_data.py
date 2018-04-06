@@ -9,7 +9,7 @@ from keras.utils import Sequence, to_categorical
 
 class VideosFrames(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_classes=7, shuffle=True):
+                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -20,6 +20,7 @@ class VideosFrames(Sequence):
         self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
+        self.num_frames_skipped = num_frames_skipped
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -41,7 +42,7 @@ class VideosFrames(Sequence):
             0, frame_counts - self.num_frames_sampled)
         end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
         framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet)
+            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
         return frames[framesidx_snippet]
 
     def get_frame_counts_of_batch(self, batch_x):
@@ -74,7 +75,7 @@ class VideosFrames(Sequence):
 
 class VideosPoses(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_classes=7, shuffle=True):
+                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -85,6 +86,7 @@ class VideosPoses(Sequence):
         self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
+        self.num_frames_skipped = num_frames_skipped
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -104,7 +106,7 @@ class VideosPoses(Sequence):
             0, frame_counts - self.num_frames_sampled)
         end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
         framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet)
+            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
         return framesidx_snippet
 
     def get_frame_counts_of_batch(self, batch_x):
@@ -139,7 +141,7 @@ class VideosPoses(Sequence):
 
 class VideosFramesPoses(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_classes=7, shuffle=True):
+                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -150,6 +152,7 @@ class VideosFramesPoses(Sequence):
         self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
+        self.num_frames_skipped = num_frames_skipped
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -171,7 +174,7 @@ class VideosFramesPoses(Sequence):
             0, frame_counts - self.num_frames_sampled)
         end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
         framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet)
+            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
         return framesidx_snippet, frames[framesidx_snippet]
 
     def get_frame_counts_of_batch(self, batch_x):
@@ -213,38 +216,16 @@ class VideosFramesPoses(Sequence):
 
 if __name__ == '__main__':
     import time
-    videos_frames_poses = VideosFramesPoses(data_path='../data/NewVideos/train_videos/',
-                                            frame_counts_path='dic/merged_frame_count.pickle',
-                                            batch_size=4,
-                                            num_frames_sampled=32)
-    for i in range(1):
-        start = time.time()
-        batch_x, _ = videos_frames_poses.__getitem__(i)
-        end = time.time()
-        print('Time taken to load a single batch of {} videos with 32 frames each: {}'.format(
-            4, end - start))
-        print(batch_x[0].shape, batch_x[1].shape)
-
-    videos_frames = VideosFrames(data_path='../data/NewVideos/train_videos/',
+    videos_frames = VideosFrames(data_path='../data/train_videos_01',
                                  frame_counts_path='dic/merged_frame_count.pickle',
-                                 batch_size=4,
-                                 num_frames_sampled=32)
+                                 batch_size=8,
+                                 num_classes=101,
+                                 num_frames_sampled=48,
+                                 num_frames_skipped=3)
     for i in range(1):
         start = time.time()
         batch_x, _ = videos_frames.__getitem__(i)
         end = time.time()
-        print('Time taken to load a single batch of {} videos with 32 frames each: {}'.format(
-            4, end - start))
-        print(batch_x.shape)
-
-    videos_poses = VideosPoses(data_path='../data/NewVideos/train_videos/',
-                               frame_counts_path='dic/merged_frame_count.pickle',
-                               batch_size=4,
-                               num_frames_sampled=64)
-    for i in range(1):
-        start = time.time()
-        batch_x, _ = videos_poses.__getitem__(i)
-        end = time.time()
-        print('Time taken to load a single batch of {} videos with 64 frames each: {}'.format(
-            4, end - start))
+        print('Time taken to load a single batch of {} videos with 16 frames each: {}'.format(
+            8, end - start))
         print(batch_x.shape)

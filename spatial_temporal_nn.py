@@ -18,11 +18,15 @@ from keras_callbacks import VideoLevelEvaluation
 
 parser = argparse.ArgumentParser(
     description='Training the spatial temporal network')
-parser.add_argument('--epochs', default=500,
-                    type=int, metavar='N', help='number of total epochs')
+parser.add_argument(
+    '--epochs', 
+    default=500,
+    type=int, 
+    metavar='N', 
+    help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=4,
+    default=8,
     type=int,
     metavar='N',
     help='mini-batch size (default: 16)')
@@ -32,6 +36,18 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='number of frames sampled from a single video')
+parser.add_argument(
+    '--num-frames-skipped',
+    default=2,
+    type=int,
+    metavar='N',
+    help='number of frames skipped when sampling')
+parser.add_argument(
+    '--num-classes',
+    default=104,
+    type=int,
+    metavar='N',
+    help='number of classes')
 parser.add_argument(
     '--train-lr',
     default=1e-3,
@@ -70,25 +86,29 @@ def train():
     print(args)
 
     train_videos_frames = VideosFrames(
-        data_path='data/NewVideos/train_videos/',
-        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-        batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
-
-    valid_videos_frames = VideosFrames(
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/train_videos_02',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes)
+
+    valid_videos_frames = VideosFrames(
+        data_path='data/test_videos_02',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes,
         shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(
         frames_input_shape=(
-            args.num_frames_sampled,
+            int(args.num_frames_sampled / args.num_frames_skipped),
             224,
             224,
             3),
-        classes=7,
+        classes=args.num_classes,
         finetune_conv_layers=False)
 
     if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
@@ -111,9 +131,9 @@ def train():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/test_videos_02',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-        num_segments=20)
+        num_segments=10)
     callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
 
     model.fit_generator(
@@ -127,25 +147,29 @@ def train():
 
 def train_with_finetune():
     train_videos_frames = VideosFrames(
-        data_path='data/NewVideos/train_videos/',
-        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-        batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
-
-    valid_videos_frames = VideosFrames(
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/train_videos_02',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes)
+
+    valid_videos_frames = VideosFrames(
+        data_path='data/test_videos_02',
+        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        batch_size=args.batch_size,
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes,
         shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(
         frames_input_shape=(
-            args.num_frames_sampled,
+            int(args.num_frames_sampled / args.num_frames_skipped),
             224,
             224,
             3),
-        classes=7,
+        classes=args.num_classes,
         finetune_conv_layers=True)
 
     if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
@@ -168,9 +192,9 @@ def train_with_finetune():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/test_videos_02',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
-        num_segments=20)
+        num_segments=10)
     callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
 
     model.fit_generator(

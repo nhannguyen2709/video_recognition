@@ -1,10 +1,6 @@
-from keras.models import Model, Sequential
+from keras.models import Model
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Bidirectional, Concatenate
-from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
-
-import os
-import pickle
 
 
 def MultiTask_VGG19_SpatialMotionTemporalGRU(frames_input_shape,

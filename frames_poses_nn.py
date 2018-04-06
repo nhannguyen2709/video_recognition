@@ -18,20 +18,36 @@ from keras_models import VGG19_SpatialMotionTemporalGRU
 
 parser = argparse.ArgumentParser(
     description='Training the network using both frames and poses')
-parser.add_argument('--epochs', default=500,
-                    type=int, metavar='N', help='number of total epochs')
+parser.add_argument(
+    '--epochs', 
+    default=500,
+    type=int, 
+    metavar='N', 
+    help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=4,
+    default=8,
     type=int,
     metavar='N',
     help='mini-batch size (default: 16)')
 parser.add_argument(
     '--num-frames-sampled',
-    default=32,
+    default=48,
     type=int,
     metavar='N',
     help='number of frames sampled from a single video')
+parser.add_argument(
+    '--num-frames-skipped',
+    default=3,
+    type=int,
+    metavar='N',
+    help='number of frames skipped when sampling')
+parser.add_argument(
+    '--num-classes',
+    default=104,
+    type=int,
+    metavar='N',
+    help='number of classes')
 parser.add_argument(
     '--train-lr',
     default=1e-3,
@@ -70,16 +86,21 @@ def train():
     print(args)
 
     train_videos_frames = VideosFramesPoses(
-        data_path='data/NewVideos/train_videos/',
+        data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes)
 
     validation_videos_frames = VideosFramesPoses(
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes,
+        shuffle=False)
 
     model = VGG19_SpatialMotionTemporalGRU(
         frames_input_shape=(
@@ -115,16 +136,21 @@ def train():
 
 def train_with_finetune():
     train_videos_frames = VideosFramesPoses(
-        data_path='data/NewVideos/train_videos/',
+        data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes)
 
     validation_videos_frames = VideosFramesPoses(
-        data_path='data/NewVideos/validation_videos',
+        data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        num_frames_skipped=args.num_frames_skipped,
+        num_classes=args.num_classes,
+        shuffle=False)
 
     model = VGG19_SpatialMotionTemporalGRU(
         frames_input_shape=(
