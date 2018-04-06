@@ -1,12 +1,12 @@
-import argparse
-import os
+import argparse, os
 
 import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
+from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.optimizers import Adam
-from keras.backend import tensorflow_backend as K
+
 from dataloader.keras_data import VideosPoses
 from keras_models import MotionTemporalGRU
 
