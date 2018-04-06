@@ -84,10 +84,12 @@ if __name__ == '__main__':
         train_dst = '../data/train_videos_' + split
         test_dst = '../data/test_videos_' + split
 
-        for train_video, test_video in zip(train_video.keys(), test_video.keys()):
+        for train_video in sorted(train_video.keys()):
             train_video_name = 'v_' + train_video
             copytree(os.path.join('../data/UCF101/jpegs_256/', train_video_name), 
                      os.path.join(train_dst, train_video_name))
+
+        for test_video in sorted(test_video.keys()):
             test_video_name = 'v_' + test_video
             copytree(os.path.join('../data/UCF101/jpegs_256/', test_video_name), 
                      os.path.join(test_dst, test_video_name))
