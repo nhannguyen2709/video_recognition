@@ -129,7 +129,7 @@ class VideosPoses(Sequence):
             video_frames_poses = np.load(os.path.join(video_path, 'poses.npy'))
             video_frames_poses = np.reshape(
                 video_frames_poses, (frame_counts, -1))
-            video_frames_poses[np.isnan(video_frames_poses)] = -1.
+            video_frames_poses[np.isnan(video_frames_poses)] = -1. # fill missing pose coordinates with -1
             video_frames_poses = video_frames_poses[framesidx_snippet]
             batch_video_poses.append(video_frames_poses)
 
@@ -203,7 +203,7 @@ class VideosFramesPoses(Sequence):
             video_frames_poses = np.load(os.path.join(video_path, 'poses.npy'))
             video_frames_poses = np.reshape(
                 video_frames_poses, (frame_counts, -1))
-            video_frames_poses[np.isnan(video_frames_poses)] = -1.
+            video_frames_poses[np.isnan(video_frames_poses)] = -1. # fill missing pose coordinates with -1
             video_frames_poses = video_frames_poses[framesidx_snippet]
             batch_video_poses.append(video_frames_poses)
 
@@ -224,7 +224,6 @@ if __name__ == '__main__':
         print('Time taken to load a single batch of {} videos with 32 frames each: {}'.format(
             4, end - start))
         print(batch_x[0].shape, batch_x[1].shape)
-        print(batch_x[1])
 
     videos_frames = VideosFrames(data_path='../data/NewVideos/train_videos/',
                                  frame_counts_path='dic/merged_frame_count.pickle',
