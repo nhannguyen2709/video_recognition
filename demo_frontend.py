@@ -12,6 +12,9 @@ parser.add_argument('--output-loc', default='outputs/action_no_pose.avi',
     type=str, metavar='PATH', help='output video')
 parser.add_argument('--num-frames', default=256,
     type=int, metavar='N', help='number of frames used to recognize action')
+parser.add_argument('--start-frame', default=100,
+    type=int, metavar='N', help='frame to start capturing for predicting action')
+
 
 if __name__=='__main__':
     global args
@@ -22,7 +25,7 @@ if __name__=='__main__':
     model.summary()
     model.load_weights(args.weights_path)
 
-    videos_frames = np.zeros((args.num_frames, 224, 224, 3))
+    videos_frames = np.zeros((1, args.num_frames, 224, 224, 3)) 
     output_video_size = (1920, 1080)
 
     time_start = time.time()
@@ -30,20 +33,26 @@ if __name__=='__main__':
     true_action = args.input_loc.split('/')[-1]
     out = cv2.VideoWriter(args.output_loc, cv2.VideoWriter_fourcc('M','J','P','G'), 10, output_video_size)
     video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - 1  
+    print('Video has {} frames'.format(video_length))
     count = 0
+    i = 0
     while(cap.isOpened()):
-        _, frame = cap.read()
-        
+        _, frame = cap.read()     
         resized_frame = cv2.resize(frame, (224, 224))
-        if count < args.num_frames:
-            videos_frames[count, :, :, :] = resized_frame
+        
+        if args.start_frame < count < args.start_frame + args.num_frames:
+            videos_frames[:, i, :, :, :] = resized_frame
+            i += 1
             prev_label = "True action: {}".format('TakeOffShoes')
-            cv2.putText(frame, prev_label, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame, prev_label, (30, args.start_frame), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
+        
         count = count + 1
-        if count == args.num_frames - 1:
+        
+        if count == args.start_frame + args.num_frames - 1:
             softmax_pred = model.predict(videos_frames, batch_size=50, verbose=1)
             pred = np.argmax(softmax_pred)
-        if count > args.num_frames:
+        
+        if count > args.start_frame + args.num_frames:
             after_label = "Predict: {}".format(labels[pred])
             cv2.putText(frame, prev_label, (30, 100), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 2, cv2.LINE_AA)
             cv2.putText(frame, after_label, (30, 150), cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 10), 2, cv2.LINE_AA)
