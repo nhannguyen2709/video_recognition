@@ -8,7 +8,8 @@ from keras.utils import Sequence, to_categorical
 
 
 class VideosFrames(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
+    def __init__(self, data_path, frame_counts_path, batch_size,
+                 num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -67,11 +68,13 @@ class VideosFrames(Sequence):
                                             for frame in frames_snippet])
             batch_video_frames.append(single_video_frames)
 
-        return np.array(batch_video_frames), to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        return np.array(batch_video_frames), to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
 
 
 class VideosPoses(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
+    def __init__(self, data_path, frame_counts_path, batch_size,
+                 num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -130,11 +133,13 @@ class VideosPoses(Sequence):
             video_frames_poses = video_frames_poses[framesidx_snippet]
             batch_video_poses.append(video_frames_poses)
 
-        return np.array(batch_video_poses), to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        return np.array(batch_video_poses), to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
 
 
 class VideosFramesPoses(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size, num_frames_sampled, num_classes=7, shuffle=True):
+    def __init__(self, data_path, frame_counts_path, batch_size,
+                 num_frames_sampled, num_classes=7, shuffle=True):
         self.data_path = data_path
         self.frame_counts_path = frame_counts_path
         self.video_filenames = sorted(os.listdir(self.data_path))
@@ -202,7 +207,8 @@ class VideosFramesPoses(Sequence):
             video_frames_poses = video_frames_poses[framesidx_snippet]
             batch_video_poses.append(video_frames_poses)
 
-        return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
 
 
 if __name__ == '__main__':
