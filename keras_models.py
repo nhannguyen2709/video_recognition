@@ -1,7 +1,7 @@
-from keras.models import Model, Sequential
-from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Bidirectional, Concatenate
 from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
+from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Bidirectional, Concatenate
+from keras.models import Model
 
 
 def MotionTemporalGRU(poses_input_shape, classes):
