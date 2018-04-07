@@ -3,7 +3,7 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 import random
-from dataloader.split_train_test_video import UCF101_splitter as UCF101_splitter
+from split_train_test_video import UCF101_splitter
 from skimage import io, color, exposure
 
 class spatial_dataset(Dataset):  
