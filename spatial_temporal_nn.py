@@ -140,7 +140,7 @@ def train():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        validation_data=valid_videos_frames,
+        # validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
@@ -201,7 +201,7 @@ def train_with_finetune():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        validation_data=valid_videos_frames,
+        # validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
