@@ -1,7 +1,8 @@
 import time
 import cv2
 import os
-import pickle 
+import pickle
+
 
 def video_to_frames(input_path, output_path):
     """Function to extract frames from an input video file
@@ -12,7 +13,7 @@ def video_to_frames(input_path, output_path):
     Returns:
         Video filename and its frame count
     """
-    # Log the time  
+    # Log the time
     time_start = time.time()
     # Start capturing the feed
     cap = cv2.VideoCapture(input_path)
@@ -35,9 +36,12 @@ def video_to_frames(input_path, output_path):
             # Release the feed
             cap.release()
             # Print stats
-            print("Done extracting frames from {}".format(input_path.split('/')[-1]))
-            print("Took {} seconds for converting".format(round(time_end-time_start, 4)))
+            print("Done extracting frames from {}".format(
+                input_path.split('/')[-1]))
+            print("Took {} seconds for converting".format(
+                round(time_end-time_start, 4)))
     return video_length
+
 
 def process_multiple_videos(path_to_videos, path_to_videos_frames, path_to_frame_count):
     # Create a frame count for videos
@@ -51,7 +55,8 @@ def process_multiple_videos(path_to_videos, path_to_videos_frames, path_to_frame
             path_to_video = os.path.join(path, filename)
             if path_to_video.endswith('.mp4'):
                 video_filename = os.path.splitext(filename)[0]
-                output_loc = os.path.join(path_to_videos_frames, video_filename)
+                output_loc = os.path.join(
+                    path_to_videos_frames, video_filename)
                 if not os.path.exists(output_loc):
                     os.mkdir(output_loc)
                 # Extract frames, return video filename and its frame count
@@ -72,8 +77,8 @@ def process_single_video(path_to_video, path_to_video_frames, path_to_frame_coun
     output_loc = os.path.join(path_to_video_frames, video_filename)
 
     if not os.path.exists(output_loc):
-        os.mkdir(output_loc)                                                                                        
-    
+        os.mkdir(output_loc)
+
     video_length = video_to_frames(path_to_video, output_loc)
     frame_count[video_filename] = video_length
 
@@ -81,11 +86,11 @@ def process_single_video(path_to_video, path_to_video_frames, path_to_frame_coun
         pickle.dump(frame_count, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-if __name__=='__main__':                                                                                                                                                                                                                                                
+if __name__ == '__main__':
     process_single_video('../data/NewVideos/train_videos_multiple_actions/v_MultipleActions_g01_c01.MP4',
                          '../data/NewVideos/videos_frames_multiple_actions',
                          '../dataloader/dic/new_videos_frame_count.pickle')
 
-    # process_multiple_videos('../data/NewVideos/train_videos', 
+    # process_multiple_videos('../data/NewVideos/train_videos',
     #                         '../data/NewVideos/videos_frames',
     #                         '../dataloader/dic/new_videos_frame_count.pickle')

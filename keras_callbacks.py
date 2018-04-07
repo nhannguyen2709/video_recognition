@@ -1,4 +1,6 @@
-import os, pickle, time
+import os
+import pickle
+import time
 
 from cv2 import imread, resize
 import numpy as np
@@ -37,8 +39,7 @@ class VideoLevelEvaluation(Callback):
             start_frameidx_in_snippet, end_frameidx__in_snippet)
         return frames[framesidx_snippet]
 
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
+    def on_epoch_end(self, epoch, logs={}):
         if epoch % self.interval == 0:
             start = time.time()
             # sample some videos to evaluate from the validation set
