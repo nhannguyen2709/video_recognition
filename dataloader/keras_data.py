@@ -1,6 +1,8 @@
+import gc
 import os
 import numpy as np
 import pickle
+import random
 
 from cv2 import resize, imread
 from sklearn.utils import shuffle
@@ -9,18 +11,13 @@ from keras.utils import Sequence, to_categorical
 
 class VideosFrames(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
+                 num_frames_sampled, num_classes, shuffle=True):
         self.data_path = data_path
-        self.frame_counts_path = frame_counts_path
-        self.video_filenames = sorted(os.listdir(self.data_path))
-        self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
-        self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in self.video_filenames]
+        self.frame_counts = pickle.load(open(frame_counts_path, 'rb'))
+        self.x, self.videos_dict = self.get_videos()
         self.y = self.labels_to_idxs()
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
-        self.num_frames_skipped = num_frames_skipped
         self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_epoch_end()
@@ -30,28 +27,41 @@ class VideosFrames(Sequence):
             self.x, self.y = shuffle(self.x, self.y)
 
     def labels_to_idxs(self):
+        labels = sorted(set([video.split('_')[1] for video in self.x]))
         idxs = []
-        for video_filename in self.video_filenames:
-            idxs.append(self.labels.index(video_filename.split('_')[1]))
+        for video in self.x:
+            idxs.append(labels.index(video.split('_')[1]))
         return idxs
 
-    def sample_frames_snippet(self, video_path, frame_counts):
+    def get_videos(self):
+        video_clips = sorted(os.listdir(self.data_path))
+        videos = sorted(set([clip[:-4] for clip in video_clips]))
+        videos_dict = {}
+        for video in videos:
+            videos_dict[video] = {}
+            videos_dict[video]['clips'] = [
+                clip for clip in video_clips if clip.startswith(video)]
+            videos_dict[video]['num_clips'] = len(videos_dict[video]['clips'])
+        return videos, videos_dict
+
+    def sample_clips(self, video):
+        clips = np.array(self.videos_dict[video]['clips'])
+        num_clips = self.videos_dict[video]['num_clips']
+        sampled_clips_idx = sorted(np.random.choice(
+            num_clips, size=4, replace=False))
+        return clips[sampled_clips_idx]
+
+    def sample_frames_snippet(self, clip_path, frame_count):
         frames = np.array([filename for filename in sorted(
-            os.listdir(video_path)) if filename.endswith('.jpg')])
-        start_frameidx_in_snippet = np.random.randint(
-            0, frame_counts - self.num_frames_sampled)
-        end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
-        framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
-        return frames[framesidx_snippet]
+            os.listdir(clip_path)) if filename.endswith('.jpg')])
+        frames_snippet_idx = sorted(np.random.choice(
+            frame_count, size=int(self.num_frames_sampled / 4), replace=False))
+        return frames[frames_snippet_idx]
 
-    def get_frame_counts_of_batch(self, batch_x):
-        frame_counts = pickle.load(open(self.frame_counts_path, 'rb'))
-        batch_video_filenames = [video_path.split(
-            '/')[-1] for video_path in batch_x]
-        batch_frame_counts = [frame_counts[video_filename]
-                              for video_filename in batch_video_filenames]
-        return batch_frame_counts
+    def get_frame_count(self, sampled_clips):
+        sampled_clip_frame_counts = [self.frame_counts[clip]
+                                     for clip in sampled_clips]
+        return sampled_clip_frame_counts
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
@@ -59,159 +69,27 @@ class VideosFrames(Sequence):
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
+
         batch_video_frames = []
+        for video in batch_x:
+            sampled_clips = self.sample_clips(video)
+            clip_paths = [os.path.join(self.data_path, clip)
+                          for clip in sampled_clips]
+            clip_frame_counts = self.get_frame_count(sampled_clips)
+            clips_frames = [self.sample_frames_snippet(
+                clip_path, frame_count) for clip_path, frame_count in zip(clip_paths, clip_frame_counts)]
+            video_frames = []
+            for clip_frames, clip_path in zip(clips_frames, clip_paths):
+                video_frames.append([resize(imread(os.path.join(clip_path, frame)), (224, 224))
+                                     for frame in clip_frames])
+            video_frames = np.reshape(
+                video_frames, (self.num_frames_sampled, 224, 224, 3))
+            batch_video_frames.append(video_frames)
+            del video_frames; gc.collect()
+        batch_video_frames = np.array(batch_video_frames)
+        batch_video_frames = batch_video_frames / 255.
 
-        for video_path, frame_counts in zip(batch_x, batch_frame_counts):
-            frames_snippet = self.sample_frames_snippet(
-                video_path, frame_counts)
-            single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224))
-                                            for frame in frames_snippet])
-            batch_video_frames.append(single_video_frames)
-
-        return np.array(batch_video_frames), to_categorical(
-            np.array(batch_y), num_classes=self.num_classes)
-
-
-class VideosPoses(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
-        self.data_path = data_path
-        self.frame_counts_path = frame_counts_path
-        self.video_filenames = sorted(os.listdir(self.data_path))
-        self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
-        self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in self.video_filenames]
-        self.y = self.labels_to_idxs()
-        self.batch_size = batch_size
-        self.num_frames_sampled = num_frames_sampled
-        self.num_frames_skipped = num_frames_skipped
-        self.num_classes = num_classes
-        self.shuffle = shuffle
-        self.on_epoch_end()
-
-    def on_epoch_end(self):
-        if self.shuffle == True:
-            self.x, self.y = shuffle(self.x, self.y)
-
-    def labels_to_idxs(self):
-        idxs = []
-        for video_filename in self.video_filenames:
-            idxs.append(self.labels.index(video_filename.split('_')[1]))
-        return idxs
-
-    def sample_framesidx_snippet(self, frame_counts):
-        start_frameidx_in_snippet = np.random.randint(
-            0, frame_counts - self.num_frames_sampled)
-        end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
-        framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
-        return framesidx_snippet
-
-    def get_frame_counts_of_batch(self, batch_x):
-        frame_counts = pickle.load(open(self.frame_counts_path, 'rb'))
-        batch_video_filenames = [video_path.split(
-            '/')[-1] for video_path in batch_x]
-        batch_frame_counts = [frame_counts[video_filename]
-                              for video_filename in batch_video_filenames]
-        return batch_frame_counts
-
-    def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
-
-    def __getitem__(self, idx):
-        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
-        batch_video_poses = []
-
-        for video_path, frame_counts in zip(batch_x, batch_frame_counts):
-            framesidx_snippet = self.sample_framesidx_snippet(frame_counts)
-            video_frames_poses = np.load(os.path.join(video_path, 'poses.npy'))
-            video_frames_poses = np.reshape(
-                video_frames_poses, (frame_counts, -1))
-            video_frames_poses[np.isnan(video_frames_poses)] = -1. # fill missing pose coordinates with -1
-            video_frames_poses = video_frames_poses[framesidx_snippet]
-            batch_video_poses.append(video_frames_poses)
-
-        return np.array(batch_video_poses), to_categorical(
-            np.array(batch_y), num_classes=self.num_classes)
-
-
-class VideosFramesPoses(Sequence):
-    def __init__(self, data_path, frame_counts_path, batch_size,
-                 num_frames_sampled, num_frames_skipped, num_classes, shuffle=True):
-        self.data_path = data_path
-        self.frame_counts_path = frame_counts_path
-        self.video_filenames = sorted(os.listdir(self.data_path))
-        self.labels = sorted(
-            list(set([video_filename.split('_')[1] for video_filename in self.video_filenames])))
-        self.x = [os.path.join(self.data_path, video_filename)
-                  for video_filename in self.video_filenames]
-        self.y = self.labels_to_idxs()
-        self.batch_size = batch_size
-        self.num_frames_sampled = num_frames_sampled
-        self.num_frames_skipped = num_frames_skipped
-        self.num_classes = num_classes
-        self.shuffle = shuffle
-        self.on_epoch_end()
-
-    def on_epoch_end(self):
-        if self.shuffle == True:
-            self.x, self.y = shuffle(self.x, self.y)
-
-    def labels_to_idxs(self):
-        idxs = []
-        for video_filename in self.video_filenames:
-            idxs.append(self.labels.index(video_filename.split('_')[1]))
-        return idxs
-
-    def sample_frames_snippet_with_idx(self, video_path, frame_counts):
-        frames = np.array([filename for filename in sorted(
-            os.listdir(video_path)) if filename.endswith('.jpg')])
-        start_frameidx_in_snippet = np.random.randint(
-            0, frame_counts - self.num_frames_sampled)
-        end_frameidx__in_snippet = start_frameidx_in_snippet + self.num_frames_sampled
-        framesidx_snippet = range(
-            start_frameidx_in_snippet, end_frameidx__in_snippet, self.num_frames_skipped)
-        return framesidx_snippet, frames[framesidx_snippet]
-
-    def get_frame_counts_of_batch(self, batch_x):
-        frame_counts = pickle.load(open(self.frame_counts_path, 'rb'))
-        batch_video_filenames = [video_path.split(
-            '/')[-1] for video_path in batch_x]
-        batch_frame_counts = [frame_counts[video_filename]
-                              for video_filename in batch_video_filenames]
-        return batch_frame_counts
-
-    def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
-
-    def __getitem__(self, idx):
-        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        batch_frame_counts = self.get_frame_counts_of_batch(batch_x)
-        batch_video_frames = []
-        batch_video_poses = []
-
-        for video_path, frame_counts in zip(batch_x, batch_frame_counts):
-            framesidx_snippet, frames_snippet = self.sample_frames_snippet_with_idx(
-                video_path, frame_counts)
-
-            single_video_frames = np.array([resize(imread(os.path.join(video_path, frame)), (224, 224))
-                                            for frame in frames_snippet])
-            batch_video_frames.append(single_video_frames)
-
-            video_frames_poses = np.load(os.path.join(video_path, 'poses.npy'))
-            video_frames_poses = np.reshape(
-                video_frames_poses, (frame_counts, -1))
-            video_frames_poses[np.isnan(video_frames_poses)] = -1. # fill missing pose coordinates with -1
-            video_frames_poses = video_frames_poses[framesidx_snippet]
-            batch_video_poses.append(video_frames_poses)
-
-        return [np.array(batch_video_frames), np.array(batch_video_poses)], to_categorical(
-            np.array(batch_y), num_classes=self.num_classes)
+        return batch_video_frames, to_categorical(np.array(batch_y), num_classes=self.num_classes)
 
 
 if __name__ == '__main__':
@@ -220,12 +98,11 @@ if __name__ == '__main__':
                                  frame_counts_path='dic/merged_frame_count.pickle',
                                  batch_size=8,
                                  num_classes=101,
-                                 num_frames_sampled=48,
-                                 num_frames_skipped=3)
+                                 num_frames_sampled=16)
     for i in range(1):
         start = time.time()
-        batch_x, _ = videos_frames.__getitem__(i)
+        batch_x, batch_y = videos_frames.__getitem__(i)
         end = time.time()
         print('Time taken to load a single batch of {} videos with 16 frames each: {}'.format(
             8, end - start))
-        print(batch_x.shape)
+        print(batch_x.shape, batch_y.shape)
