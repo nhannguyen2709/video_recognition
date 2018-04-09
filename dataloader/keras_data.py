@@ -23,7 +23,7 @@ class VideosFrames(Sequence):
         self.on_epoch_end()
 
     def on_epoch_end(self):
-        if self.shuffle == True:
+        if self.shuffle:
             self.x, self.y = shuffle(self.x, self.y)
 
     def labels_to_idxs(self):
@@ -76,8 +76,10 @@ class VideosFrames(Sequence):
             clip_paths = [os.path.join(self.data_path, clip)
                           for clip in sampled_clips]
             clip_frame_counts = self.get_frame_count(sampled_clips)
-            clips_frames = [self.sample_frames_snippet(
-                clip_path, frame_count) for clip_path, frame_count in zip(clip_paths, clip_frame_counts)]
+            clips_frames = [
+                self.sample_frames_snippet(
+                    clip_path, frame_count) for clip_path, frame_count in zip(
+                    clip_paths, clip_frame_counts)]
             video_frames = []
             for clip_frames, clip_path in zip(clips_frames, clip_paths):
                 video_frames.append([resize(imread(os.path.join(clip_path, frame)), (224, 224))
@@ -85,24 +87,27 @@ class VideosFrames(Sequence):
             video_frames = np.reshape(
                 video_frames, (self.num_frames_sampled, 224, 224, 3))
             batch_video_frames.append(video_frames)
-            del video_frames; gc.collect()
+            del video_frames
+            gc.collect()
         batch_video_frames = np.array(batch_video_frames)
         batch_video_frames = batch_video_frames / 255.
 
-        return batch_video_frames, to_categorical(np.array(batch_y), num_classes=self.num_classes)
+        return batch_video_frames, to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
 
 
 if __name__ == '__main__':
     import time
-    videos_frames = VideosFrames(data_path='../data/train_videos_01',
-                                 frame_counts_path='dic/merged_frame_count.pickle',
-                                 batch_size=8,
-                                 num_classes=101,
-                                 num_frames_sampled=16)
-    for i in range(1):
+    videos_frames = VideosFrames(
+        data_path='../data/train_videos_01',
+        frame_counts_path='dic/merged_frame_count.pickle',
+        batch_size=8,
+        num_classes=101,
+        num_frames_sampled=32)
+    for i in range(len(videos_frames)):
         start = time.time()
-        batch_x, batch_y = videos_frames.__getitem__(i)
+        batch_x, batch_y = videos_frames[i]
         end = time.time()
-        print('Time taken to load a single batch of {} videos with 16 frames each: {}'.format(
-            8, end - start))
+        print('Time to load a single batch of {} {}-frame videos: {}'.format(
+            8, 32, end - start))
         print(batch_x.shape, batch_y.shape)
