@@ -1,4 +1,5 @@
-import argparse, os
+import argparse
+import os
 
 import tensorflow as tf
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -11,25 +12,20 @@ from dataloader.keras_data import VideosFrames
 from keras_models import VGG19_SpatialTemporalGRU
 from keras_callbacks import VideoLevelEvaluation
 
-# limit tensorflow's memory usage
-# config = tf.ConfigProto()
-# config.gpu_options.per_process_gpu_memory_fraction = 0.2
-# K.set_session(tf.Session(config=config))
-
 parser = argparse.ArgumentParser(
     description='Training the spatial temporal network')
 parser.add_argument(
-    '--epochs', 
+    '--epochs',
     default=500,
-    type=int, 
-    metavar='N', 
+    type=int,
+    metavar='N',
     help='number of total epochs')
 parser.add_argument(
     '--batch-size',
     default=8,
     type=int,
     metavar='N',
-    help='mini-batch size (default: 16)')
+    help='mini-batch size')
 parser.add_argument(
     '--num-frames-sampled',
     default=32,
@@ -37,14 +33,8 @@ parser.add_argument(
     metavar='N',
     help='number of frames sampled from a single video')
 parser.add_argument(
-    '--num-frames-skipped',
-    default=2,
-    type=int,
-    metavar='N',
-    help='number of frames skipped when sampling')
-parser.add_argument(
     '--num-classes',
-    default=104,
+    default=101,
     type=int,
     metavar='N',
     help='number of classes')
@@ -86,25 +76,23 @@ def train():
     print(args)
 
     train_videos_frames = VideosFrames(
-        data_path='data/train_videos_02',
+        data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
-        num_frames_skipped=args.num_frames_skipped,
         num_classes=args.num_classes)
 
     valid_videos_frames = VideosFrames(
-        data_path='data/test_videos_02',
+        data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
-        num_frames_skipped=args.num_frames_skipped,
         num_classes=args.num_classes,
         shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(
         frames_input_shape=(
-            int(args.num_frames_sampled / args.num_frames_skipped),
+            args.num_frames_sampled,
             224,
             224,
             3),
@@ -131,8 +119,10 @@ def train():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        data_path='data/test_videos_02',
-        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        interval=1,
+        num_videos_eval=32,
+        num_frames_sampled=args.num_frames_sampled,
+        num_classes=args.num_classes,
         num_segments=10)
     callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
 
@@ -140,32 +130,30 @@ def train():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        # validation_data=valid_videos_frames,
+        validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
 
 def train_with_finetune():
     train_videos_frames = VideosFrames(
-        data_path='data/train_videos_02',
+        data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
-        num_frames_skipped=args.num_frames_skipped,
         num_classes=args.num_classes)
 
     valid_videos_frames = VideosFrames(
-        data_path='data/test_videos_02',
+        data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
-        num_frames_skipped=args.num_frames_skipped,
         num_classes=args.num_classes,
         shuffle=False)
 
     model = VGG19_SpatialTemporalGRU(
         frames_input_shape=(
-            int(args.num_frames_sampled / args.num_frames_skipped),
+            args.num_frames_sampled,
             224,
             224,
             3),
@@ -192,8 +180,10 @@ def train_with_finetune():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        data_path='data/test_videos_02',
-        frame_counts_path='dataloader/dic/merged_frame_count.pickle',
+        interval=1,
+        num_videos_eval=32,
+        num_frames_sampled=args.num_frames_sampled,
+        num_classes=args.num_classes,
         num_segments=10)
     callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
 
@@ -201,7 +191,7 @@ def train_with_finetune():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        # validation_data=valid_videos_frames,
+        validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
