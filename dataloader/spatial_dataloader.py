@@ -52,7 +52,7 @@ class spatial_dataset(Dataset):
         label = int(label)-1
         
         if self.mode=='train':
-            data ={}
+            data = {}
             for i in range(len(clips)):
                 key = 'img'+str(i)
                 index = clips[i]
@@ -80,7 +80,7 @@ class spatial_dataloader():
 
     def load_frame_count(self):
         print('==> Loading frame number of each video')
-        with open('dataloader/dic/ucf101_frame_count.pickle','rb') as file:
+        with open('dic/ucf101_frame_count.pickle','rb') as file:
             dic_frame = pickle.load(file)
         file.close()
 
@@ -157,7 +157,7 @@ class spatial_dataloader():
 if __name__ == '__main__':
     
     dataloader = spatial_dataloader(BATCH_SIZE=1, num_workers=1, 
-                                    path='../data/UCF101/spatial_no_sampled/', 
+                                    path='../data/UCF101/jpegs_256/', 
                                     ucf_list='../UCF_list/',
                                     ucf_split='01')
     train_loader,val_loader,test_video = dataloader.run()
