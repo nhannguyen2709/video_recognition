@@ -68,6 +68,18 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='manual epoch number (useful on restarts)')
+parser.add_argument(
+    '--interval',
+    default=1,
+    type=int,
+    metavar='N',
+    help='number of epochs before evaluating')
+parser.add_argument(
+    '--num-videos-eval',
+    default=64,
+    type=int,
+    metavar='N',
+    help='number of videos evaluated')
 
 
 def train():
@@ -119,8 +131,8 @@ def train():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        interval=1,
-        num_videos_eval=32,
+        interval=args.interval,
+        num_videos_eval=args.num_videos_eval,
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes,
         num_segments=10)
@@ -130,7 +142,6 @@ def train():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
@@ -180,8 +191,8 @@ def train_with_finetune():
         mode='max')
     video_level_eval = VideoLevelEvaluation(
         validation_data=valid_videos_frames,
-        interval=1,
-        num_videos_eval=32,
+        interval=args.interval,
+        num_videos_eval=args.num_videos_eval,
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes,
         num_segments=10)
@@ -191,7 +202,6 @@ def train_with_finetune():
         generator=train_videos_frames,
         epochs=args.epochs,
         callbacks=callbacks,
-        validation_data=valid_videos_frames,
         workers=args.num_workers,
         initial_epoch=args.initial_epoch)
 
