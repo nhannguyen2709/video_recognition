@@ -1,6 +1,7 @@
 import os
 import pickle
 import time
+import gc
 
 from cv2 import imread, resize
 import numpy as np
@@ -57,7 +58,7 @@ class VideoLevelEvaluation(Callback):
                 shape=(self.num_videos_eval, self.num_classes))
 
             for _ in range(self.num_segments):
-                for video, i in enumerate(eval_videos):
+                for i, video  in enumerate(eval_videos):
                     sampled_clips = self.sample_clips(video)
                     clip_paths = [os.path.join(self.data_path, clip)
                                   for clip in sampled_clips]
@@ -71,11 +72,14 @@ class VideoLevelEvaluation(Callback):
                             clips_frames, clip_paths):
                         video_frames.append([resize(imread(os.path.join(clip_path, frame)), (224, 224))
                                              for frame in clip_frames])
-                        video_frames = np.reshape(
-                            video_frames, (1, self.num_frames_sampled, 224, 224, 3))
+                    video_frames = np.reshape(
+                        video_frames, (self.num_frames_sampled, 224, 224, 3))
+                    video_frames = np.expand_dims(video_frames, axis=0)
                     video_frames = video_frames / 255.
                     eval_videos_pred[i] = self.model.predict(
                         video_frames, verbose=0)
+                    del video_frames
+                    gc.collect()
                 # average the probabilities across segments
                 avg_eval_videos_pred += eval_videos_pred / self.num_segments
 
