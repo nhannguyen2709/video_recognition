@@ -136,7 +136,7 @@ def train():
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes,
         num_segments=10)
-    callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
+    callbacks = [video_level_eval, checkpoint, save_best, reduce_lr]
 
     model.fit_generator(
         generator=train_videos_frames,
@@ -196,7 +196,7 @@ def train_with_finetune():
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes,
         num_segments=10)
-    callbacks = [checkpoint, reduce_lr, save_best, video_level_eval]
+    callbacks = [video_level_eval, checkpoint, save_best, reduce_lr]
 
     model.fit_generator(
         generator=train_videos_frames,
