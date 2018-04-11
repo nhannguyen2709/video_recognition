@@ -46,7 +46,8 @@ class VideoLevelEvaluation(Callback):
                                      for clip in sampled_clips]
         return sampled_clip_frame_counts
 
-    def on_epoch_end(self, epoch, logs={}):
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
         if epoch % self.interval == 0:
             start = time.time()
             # sample some videos to evaluate from the validation set
@@ -95,9 +96,7 @@ class VideoLevelEvaluation(Callback):
             logs['eval_acc'] = eval_acc
             end = time.time()
             print(
-                "\nEpoch {:d}\n - evaluation time: {:.2f}s - eval_loss: {:.4f} - eval_acc.: {:.4f}".format(
-                    epoch +
-                    1,
+                "\n- evaluation time: {:.2f}s - eval_loss: {:.4f} - eval_acc.: {:.4f}\n".format(
                     end -
                     start,
                     eval_loss,
