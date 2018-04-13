@@ -104,10 +104,11 @@ if __name__ == '__main__':
         batch_size=8,
         num_classes=101,
         num_frames_sampled=32)
-    for i in range(len(videos_frames)):
-        start = time.time()
-        batch_x, batch_y = videos_frames[i]
-        end = time.time()
-        print('Time to load a single batch of {} {}-frame videos: {}'.format(
-            8, 32, end - start))
-        print(batch_x.shape, batch_y.shape)
+    print(len(videos_frames))
+    # for i in range(len(videos_frames)):
+    #     start = time.time()
+    #     batch_x, batch_y = videos_frames[i]
+    #     end = time.time()
+    #     print('Time to load a single batch of {} {}-frame videos: {}'.format(
+    #         8, 32, end - start))
+    #     print(batch_x.shape, batch_y.shape)
