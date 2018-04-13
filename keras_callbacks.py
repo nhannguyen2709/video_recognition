@@ -96,7 +96,7 @@ class VideoLevelEvaluation(Callback):
             logs['eval_acc'] = eval_acc
             end = time.time()
             print(
-                "\n- evaluation time: {:.2f}s - eval_loss: {:.4f} - eval_acc.: {:.4f}\n".format(
+                "- evaluation time: {:.2f}s - eval_loss: {:.4f} - eval_acc.: {:.4f}\n".format(
                     end -
                     start,
                     eval_loss,
