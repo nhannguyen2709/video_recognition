@@ -9,7 +9,7 @@ from sklearn.utils import shuffle
 from keras.utils import Sequence, to_categorical
 
 
-class VideosFrames(Sequence):
+class UCF101VideosFrames(Sequence):
     def __init__(self, data_path, frame_counts_path, batch_size,
                  num_frames_sampled, num_classes, shuffle=True):
         self.data_path = data_path
@@ -96,19 +96,76 @@ class VideosFrames(Sequence):
             np.array(batch_y), num_classes=self.num_classes)
 
 
+class PennAction(Sequence):
+    def __init__(self, frames_path, labels_path, batch_size,
+                 num_frames_sampled, num_classes, shuffle=True):
+        self.frames_path = frames_path
+        self.labels_path = labels_path
+        self.get_videos_paths()
+        self.extract_mat_file()
+        self.batch_size = batch_size
+        self.num_frames_sampled = num_frames_sampled
+        self.num_classes = num_classes
+        self.shuffle = shuffle
+        self.on_epoch_end()
+
+    def on_epoch_end(self):
+        if self.shuffle:
+            self.x, self.y, self.frame_counts = shuffle(self.x, self.y, self.frame_counts)
+    
+    def get_videos_paths(self):
+        list_videos = sorted(os.listdir(self.frames_path))
+        self.x = [os.path.join(self.frames_path, video) for video in list_videos]
+    
+    def extract_mat_file(self):
+        list_mat_files = sorted(os.listdir(self.labels_path))
+        y = np.empty(len(list_mat_files), dtype=object)
+        frame_counts = np.empty(len(list_mat_files), dtype=int)
+        for i, mat_file in enumerate(list_mat_files):
+            mat = io.loadmat(os.path.join(self.labels_path, mat_file))
+            frame_counts[i] = mat['nframes'][0][0]
+            y[i] = mat['action'][0]
+        
+        self.frame_counts = frame_counts         
+        self.labels = sorted(set(y))
+        self.y = np.vectorize(lambda x: labels.index(x))(y) # convert label into class
+        
+    def sample_frames(self, video_path, frame_count):
+        all_frames = np.array([filename for filename in sorted(
+            os.listdir(video_path)) if filename.endswith('.jpg')])
+        sampled_frames_idx = sorted(np.random.choice(
+            frame_count, size=int(self.num_frames_sampled), replace=False))
+        return all_frames[sampled_frames_idx]
+
+    def __getitem__(self, idx):
+        batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_frame_counts = self.frame_counts[idx * self.batch_size:(idx + 1) * self.batch_size]
+        batch_video_frames = np.zeros((self.batch_size, self.num_frames_sampled, 224, 224, 3))
+        for i, video_path in enumerate(batch_x):
+            sampled_frames = self.sample_frames(video_path, batch_frame_counts[i])
+            batch_video_frames[i] = [resize(imread(os.path.join(video_path, frame)), (224, 224))
+                                     for frame in sampled_frames]
+            
+        batch_video_frames = batch_video_frames / 255.
+
+        return batch_video_frames, to_categorical(
+            np.array(batch_y), num_classes=self.num_classes)
+    
+    
 if __name__ == '__main__':
     import time
-    videos_frames = VideosFrames(
+    videos_frames = UCF101VideosFrames(
         data_path='../data/train_videos_01',
         frame_counts_path='dic/merged_frame_count.pickle',
         batch_size=8,
         num_classes=101,
         num_frames_sampled=32)
     print(len(videos_frames))
-    # for i in range(len(videos_frames)):
-    #     start = time.time()
-    #     batch_x, batch_y = videos_frames[i]
-    #     end = time.time()
-    #     print('Time to load a single batch of {} {}-frame videos: {}'.format(
-    #         8, 32, end - start))
-    #     print(batch_x.shape, batch_y.shape)
+    for i in range(len(videos_frames)):
+        start = time.time()
+        batch_x, batch_y = videos_frames[i]
+        end = time.time()
+        print('Time to load a single batch of {} {}-frame videos: {}'.format(
+            8, 32, end - start))
+        print(batch_x.shape, batch_y.shape)
