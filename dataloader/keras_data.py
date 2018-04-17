@@ -115,9 +115,9 @@ class PennAction(Sequence):
                 self.x, self.y, self.frame_counts)
 
     def get_videos_paths(self):
-        list_videos = sorted(os.listdir(self.frames_path))
+        videos = sorted(os.listdir(self.frames_path))
         self.x = [os.path.join(self.frames_path, video)
-                  for video in list_videos]
+                  for video in videos]
 
     def extract_mat_file(self):
         list_mat_files = sorted(os.listdir(self.labels_path))
