@@ -7,7 +7,7 @@ import numpy as np
 from keras_models import VGG19_SpatialTemporalGRU
 
 parser = argparse.ArgumentParser(
-    description='Training the motion temporal network')
+    description='Demo on MyVideos dataset')
 parser.add_argument('--weights-path', default='checkpoint/spatial_temporal/weights.best.hdf5',
                     type=str, metavar='PATH', help='path to best model weights')
 parser.add_argument('--input-loc', default='data/test_videos/C0126.MP4',
@@ -19,7 +19,6 @@ parser.add_argument('--num-frames', default=256,
 parser.add_argument('--start-frame', default=100,
     type=int, metavar='N', help='frame to start capturing for predicting action')
 
-                    type = int, metavar = 'N', help = 'number of frames used to recognize action')
 
 if __name__ == '__main__':
     global args
