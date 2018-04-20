@@ -196,8 +196,8 @@ class PennAction(Sequence):
 
 
 if __name__=='__main__':
-    penn_action = PennAction(frames_path='../data/Penn_Action/train/frames', 
-                             labels_path='../data/Penn_Action/train/labels',
+    penn_action = PennAction(frames_path='../data/Penn_Action/validation/frames', 
+                             labels_path='../data/Penn_Action/validation/labels',
                              batch_size=8, num_frames_sampled=16, num_classes=15,
                              shuffle=False)
     for i in range(len(penn_action)):
