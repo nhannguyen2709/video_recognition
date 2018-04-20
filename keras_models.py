@@ -361,8 +361,8 @@ def VGG19_SpatialMotionTemporalGRU(
 
     # Finetune the last 2 convolutional layers in block 5 of VGG19
     if finetune_conv_layers:
-        model.layers[-5].trainable = True
-        model.layers[-6].trainable = True
+        model.layers[-9].trainable = True
+        model.layers[-10].trainable = True
 
     return model
 
@@ -611,5 +611,6 @@ def MultiTask_VGG19_SpatialMotionTemporalGRU(frames_input_shape,
 
 if __name__ == '__main__':
     # pass
-    model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(32, 224, 224, 3), poses_input_shape=(32,), classes=3)
+    model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(32, 224, 224, 3), poses_input_shape=(32, 26),
+                                           classes=3, finetune_conv_layers=True)
     model.summary()
