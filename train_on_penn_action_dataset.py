@@ -9,7 +9,7 @@ from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 
 from dataloader.keras_data import PennAction
-from keras_models import VGG19_SpatialMotionTemporalGRU
+from keras_models import VGG19_SpatialMotionTemporalGRU, MultiGPUModel
 
 parser = argparse.ArgumentParser(
     description='Training the spatial motion temporal network')
@@ -61,6 +61,12 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='manual epoch number (useful on restarts)')
+parser.add_argument(
+    '--num-gpus',
+    default=2,
+    type=int,
+    metavar='N',
+    help='number of GPUs on the device')
 
 
 def train():
@@ -102,8 +108,8 @@ def train():
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
-    reduce_lr = ReduceLROnPlateau(monitor='eval_loss', factor=0.2,
-                                  patience=10, verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                  patience=5, verbose=1)
     save_best = ModelCheckpoint(
         'checkpoint/spatial_temporal/weights.best.hdf5',
         monitor='eval_acc',
@@ -113,6 +119,18 @@ def train():
     
     callbacks = [save_best, reduce_lr]
 
+    # # multi-gpu training
+    # parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
+    # parallel_model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['acc'])
+    # parallel_model.fit_generator(
+    #     generator=train_videos_frames,
+    #     epochs=args.epochs,
+    #     callbacks=callbacks,
+    #     workers=args.num_workers,
+    #     validation_data=valid_videos_frames,
+    #     initial_epoch=args.initial_epoch)
+
+    # single-gpu training    
     model.fit_generator(
         generator=train_videos_frames,
         epochs=args.epochs,
@@ -160,8 +178,8 @@ def train_with_finetune():
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
-    reduce_lr = ReduceLROnPlateau(monitor='eval_loss', factor=0.2,
-                                  patience=10, verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                                  patience=5, verbose=1)
     save_best = ModelCheckpoint(
         'checkpoint/spatial_temporal/weights.best.hdf5',
         monitor='eval_acc',
@@ -171,6 +189,18 @@ def train_with_finetune():
     
     callbacks = [save_best, reduce_lr]
 
+    # # multi-gpu training
+    # parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
+    # parallel_model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['acc'])
+    # parallel_model.fit_generator(
+    #     generator=train_videos_frames,
+    #     epochs=args.epochs,
+    #     callbacks=callbacks,
+    #     workers=args.num_workers,
+    #     validation_data=valid_videos_frames,
+    #     initial_epoch=args.initial_epoch)
+
+    # single-gpu training    
     model.fit_generator(
         generator=train_videos_frames,
         epochs=args.epochs,
