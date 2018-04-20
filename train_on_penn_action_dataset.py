@@ -56,12 +56,6 @@ parser.add_argument(
     metavar='N',
     help='maximum number of processes to spin up')
 parser.add_argument(
-    '--initial-epoch',
-    default=0,
-    type=int,
-    metavar='N',
-    help='manual epoch number (useful on restarts)')
-parser.add_argument(
     '--num-gpus',
     default=2,
     type=int,
@@ -101,8 +95,8 @@ def train():
         classes=args.num_classes,
         finetune_conv_layers=False)
 
-    # if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
-        # model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
+    if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
+        model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
     model.compile(optimizer=Adam(lr=args.train_lr),
                   loss='categorical_crossentropy',
@@ -112,7 +106,7 @@ def train():
                                   patience=5, verbose=1)
     save_best = ModelCheckpoint(
         'checkpoint/spatial_temporal/weights.best.hdf5',
-        monitor='eval_acc',
+        monitor='val_acc',
         verbose=1,
         save_best_only=True,
         mode='max')
@@ -128,7 +122,7 @@ def train():
     #     callbacks=callbacks,
     #     workers=args.num_workers,
     #     validation_data=valid_videos_frames,
-    #     initial_epoch=args.initial_epoch)
+    #     initial_epoch=)
 
     # single-gpu training    
     model.fit_generator(
@@ -137,7 +131,7 @@ def train():
         callbacks=callbacks,
         workers=args.num_workers,
         validation_data=valid_videos_frames,
-        initial_epoch=args.initial_epoch)
+        initial_epoch=10)
 
 
 def train_with_finetune():
@@ -171,8 +165,8 @@ def train_with_finetune():
         classes=args.num_classes,
         finetune_conv_layers=True)
 
-    # if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
-        # model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
+    if os.path.exists('checkpoint/spatial_temporal/weights.best.hdf5'):
+        model.load_weights('checkpoint/spatial_temporal/weights.best.hdf5')
     model.summary()
     model.compile(optimizer=Adam(lr=args.train_lr),
                   loss='categorical_crossentropy',
@@ -182,7 +176,7 @@ def train_with_finetune():
                                   patience=5, verbose=1)
     save_best = ModelCheckpoint(
         'checkpoint/spatial_temporal/weights.best.hdf5',
-        monitor='eval_acc',
+        monitor='val_acc',
         verbose=1,
         save_best_only=True,
         mode='max')
@@ -198,19 +192,19 @@ def train_with_finetune():
     #     callbacks=callbacks,
     #     workers=args.num_workers,
     #     validation_data=valid_videos_frames,
-    #     initial_epoch=args.initial_epoch)
+    #     initial_epoch=)
 
     # single-gpu training    
     model.fit_generator(
         generator=train_videos_frames,
-        epochs=args.epochs,
+        epochs=50,
         callbacks=callbacks,
         workers=args.num_workers,
         validation_data=valid_videos_frames,
-        initial_epoch=args.initial_epoch)
+        initial_epoch=41)
 
 
 if __name__ == '__main__':
-    train()
-    K.clear_session()
+    # train()
+    # K.clear_session()
     train_with_finetune()
