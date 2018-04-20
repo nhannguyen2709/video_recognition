@@ -2,6 +2,24 @@ from keras.applications.vgg16 import VGG16
 from keras.applications.vgg19 import VGG19
 from keras.layers import Dense, Input, Flatten, Conv2D, MaxPooling2D, GlobalMaxPooling2D, GRU, TimeDistributed, Bidirectional, Average
 from keras.models import Model
+from keras.utils import multi_gpu_model
+
+
+class MultiGPUModel(Model):
+    def __init__(self, base_model, gpus):
+        parallel_model = multi_gpu_model(base_model, gpus)
+        self.__dict__.update(parallel_model.__dict__)
+        self._base_model = base_model
+
+    def __getattribute__(self, attrname):
+        '''Override load and save methods to be used from the base model. The
+        base model holds references to the weights in the multi-gpu model.
+        '''
+        # return Model.__getattribute__(self, attrname)
+        if 'load' in attrname or 'save' in attrname:
+            return getattr(self._base_model, attrname)
+
+        return super(MultiGPUModel, self).__getattribute__(attrname)
 
 
 def VGG19_SpatialTemporalGRU(
