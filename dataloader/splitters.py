@@ -23,7 +23,7 @@ class UCF101_splitter:
 
     def split_video(self):
         self.get_action_index()
-        for path, subdir, files in os.walk(self.path):
+        for _, _, files in os.walk(self.path):
             for filename in files:
                 if filename.split('.')[0] == 'trainlist' + self.split:
                     train_video = self.file2_dic(self.path + filename)
