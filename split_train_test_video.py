@@ -19,18 +19,18 @@ def copytree(src, dst, symlinks=False, ignore=None):
 
 def split_ucf101_dataset():
     splits = ['01', '02', '03']
-    data_path = 'data/UCF101/jpegs_256/'
+    data_path = 'data/UCF101/frames/'
     
     for split in splits:
         splitter = UCF101_splitter(path='UCF_list/', split=split)
         train_video, test_video = splitter.split_video()
         print(
             'Train videos: {}, validation videos: {}'.format(
-                len(train_videos),
-                len(test_videos)))
+                len(train_video),
+                len(test_video)))
 
-        train_dst = 'data/train_videos_' + split
-        test_dst = 'data/test_videos_' + split
+        train_dst = 'data/UCF101/train_videos_' + split
+        test_dst = 'data/UCF101/test_videos_' + split
 
         for train_video in tqdm(sorted(train_video.keys())):
             train_video_name = 'v_' + train_video
@@ -64,7 +64,7 @@ def split_penn_action_dataset():
         copytree(os.path.join(data_path, train_video),
                  os.path.join(train_frames_dst, train_video))
 
-        shutil.copy(os.path.join(labels_path, train_video_mat),
+        shutil.copy2(os.path.join(labels_path, train_video_mat),
                     os.path.join(train_labels_dst, train_video_mat))
 
     for test_video in tqdm(test_videos):
@@ -72,7 +72,7 @@ def split_penn_action_dataset():
         copytree(os.path.join(data_path, test_video),
                  os.path.join(test_frames_dst, test_video))
 
-        shutil.copy(os.path.join(labels_path, test_video_mat),
+        shutil.copy2(os.path.join(labels_path, test_video_mat),
                     os.path.join(test_labels_dst, test_video_mat))
 
 
