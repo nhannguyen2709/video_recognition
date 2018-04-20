@@ -12,7 +12,7 @@ from keras.callbacks import Callback
 from keras.utils import to_categorical
 
 
-class VideoLevelEvaluation(Callback):
+class UCF101Validation(Callback):
     def __init__(self, validation_data, interval, num_videos_eval,
                  num_frames_sampled, num_segments, num_classes):
         super(Callback, self).__init__()
