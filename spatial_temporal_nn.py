@@ -8,9 +8,9 @@ from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.optimizers import Adam
 
-from dataloader.keras_data import VideosFrames
+from dataloader.keras_data import UCF101
 from keras_models import VGG19_SpatialTemporalGRU
-from keras_callbacks import VideoLevelEvaluation
+from keras_callbacks import UCF101Validation
 
 parser = argparse.ArgumentParser(
     description='Training the spatial temporal network')
@@ -87,14 +87,14 @@ def train():
     args = parser.parse_args()
     print(args)
 
-    train_videos_frames = VideosFrames(
+    train_videos_frames = UCF101(
         data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes)
 
-    valid_videos_frames = VideosFrames(
+    valid_videos_frames = UCF101(
         data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
@@ -120,7 +120,7 @@ def train():
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='eval_acc', verbose=1,
-                                 mode='max', period=20)
+                                 mode='max', period=10)
     reduce_lr = ReduceLROnPlateau(monitor='eval_loss', factor=0.2,
                                   patience=10, verbose=1)
     save_best = ModelCheckpoint(
@@ -129,7 +129,7 @@ def train():
         verbose=1,
         save_best_only=True,
         mode='max')
-    video_level_eval = VideoLevelEvaluation(
+    video_level_eval = UCF101Validation(
         validation_data=valid_videos_frames,
         interval=args.interval,
         num_videos_eval=args.num_videos_eval,
@@ -147,14 +147,14 @@ def train():
 
 
 def train_with_finetune():
-    train_videos_frames = VideosFrames(
+    train_videos_frames = UCF101(
         data_path='data/train_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
         num_classes=args.num_classes)
 
-    valid_videos_frames = VideosFrames(
+    valid_videos_frames = UCF101(
         data_path='data/test_videos_01',
         frame_counts_path='dataloader/dic/merged_frame_count.pickle',
         batch_size=args.batch_size,
@@ -180,7 +180,7 @@ def train_with_finetune():
 
     checkpoint = ModelCheckpoint(args.checkpoint_path,
                                  monitor='eval_acc', verbose=1,
-                                 mode='max', period=20)
+                                 mode='max', period=10)
     reduce_lr = ReduceLROnPlateau(monitor='eval_loss', factor=0.2,
                                   patience=10, verbose=1)
     save_best = ModelCheckpoint(
@@ -189,7 +189,7 @@ def train_with_finetune():
         verbose=1,
         save_best_only=True,
         mode='max')
-    video_level_eval = VideoLevelEvaluation(
+    video_level_eval = UCF101Validation(
         validation_data=valid_videos_frames,
         interval=args.interval,
         num_videos_eval=args.num_videos_eval,
