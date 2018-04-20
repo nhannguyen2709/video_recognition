@@ -21,7 +21,12 @@ class UCF101(Sequence):
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
         self.shuffle = shuffle
+        self.on_train_begin()
         self.on_epoch_end()
+
+    def on_train_begin(self):
+        if self.shuffle:
+            self.x, self.y = shuffle(self.x, self.y)
 
     def on_epoch_end(self):
         if self.shuffle:
@@ -109,7 +114,13 @@ class PennAction(Sequence):
         self.num_frames_sampled = num_frames_sampled
         self.num_classes = num_classes
         self.shuffle = shuffle
+        self.on_train_begin()
         self.on_epoch_end()
+
+    def on_train_begin(self):
+        if self.shuffle:
+            self.x, self.y, self.frame_counts = shuffle(
+                self.x, self.y, self.frame_counts)
 
     def on_epoch_end(self):
         if self.shuffle:
@@ -143,19 +154,18 @@ class PennAction(Sequence):
         return sampled_frames_idx, all_frames[sampled_frames_idx]
     
     def __len__(self):
-        return int(np.ceil(len(self.x) / float(self.batch_size)))
+        return int(np.ceil(len(self.x) / float(self.batch_size))) - 1
 
     def __getitem__(self, idx):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
-        
         batch_mat_files = [video_path.replace('frames/', 'labels/') for video_path in batch_x]
         batch_frame_counts = self.frame_counts[idx * \
             self.batch_size:(idx + 1) * self.batch_size]
         batch_video_frames = np.zeros(
-            (self.batch_size, self.num_frames_sampled, 224, 224, 3))
+            (len(batch_x), self.num_frames_sampled, 224, 224, 3))
         batch_video_poses = np.zeros(
-            (self.batch_size, self.num_frames_sampled, 26))
+            (len(batch_x), self.num_frames_sampled, 26))
 
         for i, video_path in enumerate(batch_x):
             sampled_frames_idx, sampled_frames = self.sample_frames(
@@ -186,11 +196,11 @@ class PennAction(Sequence):
 
 
 if __name__=='__main__':
-    penn_action = PennAction(frames_path='data/Penn_Action/frames', 
-                             labels_path='data/Penn_Action/labels',
+    penn_action = PennAction(frames_path='../data/Penn_Action/train/frames', 
+                             labels_path='../data/Penn_Action/train/labels',
                              batch_size=8, num_frames_sampled=16, num_classes=15,
                              shuffle=False)
-
-    x, y = penn_action.__getitem__(0)
-    print(x[0].shape, x[1].shape)
+    for i in range(len(penn_action)):
+        x, y = penn_action.__getitem__(i)
+        print(x[0].shape, x[1].shape, y.shape)
     
