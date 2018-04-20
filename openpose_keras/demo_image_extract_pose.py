@@ -48,7 +48,7 @@ HEIGHT = 1080
 def process(input_image, params, model_params):
 
     oriImg = cv2.imread(input_image)  # B,G,R order
-    #************************************************
+    # ************************************************
     oriImg = cv2.resize(oriImg, (WIDTH, HEIGHT), cv2.INTER_LINEAR)
 
     multiplier = [x * model_params['boxsize'] / oriImg.shape[0]
@@ -287,6 +287,8 @@ if __name__ == '__main__':
     for (path, subdirs, files) in sorted(walk(args.input_folder)):
         print(path)
         outfile = os.path.join(path, 'poses')
+        if os.path.exists(os.path.join(outfile, '.npy')):
+            pass
         if not os.path.isfile(outfile + '.npy'):
             files = sorted(files)
             poses = np.array([], dtype=np.int64).reshape(0, 18, 3)
