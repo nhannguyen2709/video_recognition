@@ -30,7 +30,7 @@ class UCF101_splitter:
                 if filename.split('.')[0] == 'testlist' + self.split:
                     test_video = self.file2_dic(self.path + filename)
         print(
-            '==> Training videos: {}, Validation videos: {}'.format(
+            'Training videos: {}, Validation videos: {}'.format(
                 len(train_video),
                 len(test_video)))
         self.train_video = self.name_HandstandPushups(train_video)
@@ -65,14 +65,26 @@ class UCF101_splitter:
         return dic2
 
 
+class MyVideos_splitter:
+    def __init__(self, frames_path):
+        self.frames_path = frames_path
+
+    def split_video(self):
+        videos_frames = np.array(sorted(os.listdir(self.frames_path)))
+        num_videos = len(videos_frames)
+        train_idx = np.random.choice(num_videos, size=round(num_videos*0.9), replace=False)
+        valid_idx = np.setdiff1d(np.arange(num_videos), train_idx)
+
+        return videos_frames[train_idx], videos_frames[valid_idx]
+
+
 class PennAction_splitter:
     def __init__(self, data_path, labels_path):
         self.data_path = data_path
         self.labels_path = labels_path
 
     def split_video(self):
-        videos = np.array([video for video in
-                           sorted(os.listdir(self.data_path))])
+        videos = np.array(sorted(os.listdir(self.data_path)))
         list_mat_files = sorted(os.listdir(self.labels_path))
         train = np.empty(len(list_mat_files), dtype=int)
         for i, mat_file in enumerate(list_mat_files):

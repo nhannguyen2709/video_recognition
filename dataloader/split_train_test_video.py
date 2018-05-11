@@ -1,6 +1,6 @@
 import os, shutil
 from tqdm import tqdm
-from dataloader.splitters import UCF101_splitter, PennAction_splitter
+from splitters import UCF101_splitter, PennAction_splitter, MyVideos_splitter
 
 
 def copytree(src, dst, symlinks=False, ignore=None):
@@ -43,6 +43,34 @@ def split_ucf101_dataset():
                      os.path.join(test_dst, test_video_name))
 
 
+def split_my_videos_dataset():
+    frames_path = '../data/MyVideos/frames'
+    poses_path = '../data/MyVideos/poses'
+    splitter = MyVideos_splitter(frames_path=frames_path)
+    train_videos, test_videos = splitter.split_video()
+    print(
+        'Train videos: {}, validation videos: {}'.format(
+            len(train_videos),
+            len(test_videos)))
+    
+    train_frames_dst =  '../data/MyVideos/train/frames'
+    test_frames_dst = '../data/MyVideos/validation/frames'
+    train_poses_dst = '../data/MyVideos/train/poses'
+    test_poses_dst = '../data/MyVideos/validation/poses'
+
+    for train_video in tqdm(train_videos):
+        copytree(os.path.join(frames_path, train_video),
+                 os.path.join(train_frames_dst, train_video))
+        copytree(os.path.join(poses_path, train_video),
+                 os.path.join(train_poses_dst, train_video))
+    
+    for test_video in tqdm(test_videos):
+        copytree(os.path.join(frames_path, test_video),
+                 os.path.join(test_frames_dst, test_video))
+        copytree(os.path.join(poses_path, test_video),
+                 os.path.join(test_poses_dst, test_video))
+
+
 def split_penn_action_dataset():
     data_path='../data/Penn_Action/frames'
     labels_path='../data/Penn_Action/labels'
@@ -77,4 +105,4 @@ def split_penn_action_dataset():
 
 
 if __name__ == '__main__':
-    split_penn_action_dataset()
+    split_my_videos_dataset()
