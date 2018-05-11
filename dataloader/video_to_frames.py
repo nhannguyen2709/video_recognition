@@ -87,10 +87,6 @@ def process_single_video(path_to_video, path_to_video_frames, path_to_frame_coun
 
 
 if __name__ == '__main__':
-    process_single_video('../data/NewVideos/train_videos_multiple_actions/v_MultipleActions_g01_c01.MP4',
-                         '../data/NewVideos/videos_frames_multiple_actions',
-                         '../dataloader/dic/new_videos_frame_count.pickle')
-
-    # process_multiple_videos('../data/NewVideos/train_videos',
-    #                         '../data/NewVideos/videos_frames',
-    #                         '../dataloader/dic/new_videos_frame_count.pickle')
+    process_multiple_videos('../data/MyVideos/new_cut_clips',
+                            '../data/MyVideos/frames',
+                            '../dataloader/dic/new_cut_clips.pickle')
