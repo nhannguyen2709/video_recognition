@@ -4,7 +4,7 @@ import pickle
 import time
 import cv2
 import numpy as np
-from keras_models import VGG19_SpatialTemporalGRU
+from keras_models import VGG19_Attention_LSTM
 
 parser = argparse.ArgumentParser(
     description='Demo on MyVideos dataset')
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     labels=['ApplyEyeMakeup', 'ApplyLipstick', 'Archery',
               'BabyCrawling', 'PickUpObject', 'TakeOffJacket', 'TakeOffShoes']
-    model = VGG19_SpatialTemporalGRU(frames_input_shape=(
+    model = VGG19_Attention_LSTM(frames_input_shape=(
         args.num_frames, 224, 224, 3), classes=7)
     model.summary()
     model.load_weights(args.weights_path)
