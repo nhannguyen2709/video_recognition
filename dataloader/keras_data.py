@@ -291,7 +291,7 @@ class PennAction(Sequence):
 if __name__=='__main__':
     # penn_action = PennAction(frames_path='../data/Penn_Action/validation/frames', 
     #                          labels_path='../data/Penn_Action/validation/labels',
-    #                          batch_size=8, num_frames_sampled=16,
+    #                          batch_size=4, num_frames_sampled=16,
     #                          shuffle=False)
     # for i in range(len(penn_action)):
     #     x, y = penn_action.__getitem__(i)
@@ -301,7 +301,7 @@ if __name__=='__main__':
     
     my_videos = MyVideos(frames_path='../data/MyVideos/frames', 
                          poses_path='../data/MyVideos/poses',
-                         batch_size=8, num_frames_sampled=16,
+                         batch_size=4, num_frames_sampled=16,
                          shuffle=False)
     print(my_videos.labels)
     for i in range(len(my_videos)):
@@ -310,4 +310,3 @@ if __name__=='__main__':
         print(x[0].shape, x[1].shape, y.shape)
         end = time.time()
         print('Time taken to load a batch of {} videos: {}'.format(y.shape[0], end - start))
-    
