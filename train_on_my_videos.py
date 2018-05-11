@@ -55,6 +55,11 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='number of GPUs on the device')
+parser.add_argument(
+    '--gpu-mode',
+    default='single',
+    type=str,
+    help='gpu mode (single or multi)')
 
 
 def train():
@@ -97,23 +102,22 @@ def train():
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
-    # single-gpu training
-    model.fit_generator(
-        generator=train_videos,
-        epochs=args.epochs,
-        callbacks=callbacks,
-        workers=args.num_workers,
-        validation_data=valid_videos)
-
-    # # multi-gpu training
-    # parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-    # parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
-    # parallel_model.fit_generator(
-    #     generator=train_videos,
-    #     epochs=args.epochs,
-    #     callbacks=callbacks,
-    #     workers=args.num_workers,
-    #     validation_data=valid_videos)
+    if args.gpu_mode=='single':
+        model.fit_generator(
+            generator=train_videos,
+            epochs=args.epochs,
+            callbacks=callbacks,
+            workers=args.num_workers,
+            validation_data=valid_videos)
+    else:
+        parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
+        parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        parallel_model.fit_generator(
+            generator=train_videos,
+            epochs=args.epochs,
+            callbacks=callbacks,
+            workers=args.num_workers,
+            validation_data=valid_videos)
     
 
 def train_with_finetune():
@@ -148,23 +152,22 @@ def train_with_finetune():
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
-    # single-gpu training    
-    model.fit_generator(
-        generator=train_videos,
-        epochs=args.epochs,
-        callbacks=callbacks,
-        workers=args.num_workers,
-        validation_data=valid_videos)
-
-    # # multi-gpu training
-    # parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-    # parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
-    # parallel_model.fit_generator(
-    #     generator=train_videos,
-    #     epochs=args.epochs,
-    #     callbacks=callbacks, 
-    #     workers=args.num_workers,
-    #     validation_data=valid_videos)
+    if args.gpu_mode=='single':
+        model.fit_generator(
+            generator=train_videos,
+            epochs=args.epochs,
+            callbacks=callbacks,
+            workers=args.num_workers,
+            validation_data=valid_videos)
+    else:
+        parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
+        parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        parallel_model.fit_generator(
+            generator=train_videos,
+            epochs=args.epochs,
+            callbacks=callbacks,
+            workers=args.num_workers,
+            validation_data=valid_videos)
 
 
 if __name__ == '__main__':
