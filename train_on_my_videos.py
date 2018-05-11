@@ -27,7 +27,7 @@ parser.add_argument(
     help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=8,
+    default=4,
     type=int,
     metavar='N',
     help='number of videos in a single mini-batch')
@@ -68,13 +68,13 @@ def train():
     print(args)
 
     train_videos = MyVideos(
-        frames_path='data/MyVideos/frames/train',
-        poses_path='data/MyVideos/poses/train',
+        frames_path='data/MyVideos/train/frames/',
+        poses_path='data/MyVideos/train/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     valid_videos = MyVideos(
-        frames_path='data/MyVideos/frames/valid',
-        poses_path='data/MyVideos/poses/valid',
+        frames_path='data/MyVideos/validation/frames',
+        poses_path='data/MyVideos/validation/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     
@@ -88,19 +88,22 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr]
 
-    model = VGG19_SpatialMotionTemporalGRU(
-        frames_input_shape=(
-            args.num_frames_sampled,
-            224,
-            224,
-            3),
-        poses_input_shape=(
-            args.num_frames_sampled,
-            26),
-        classes=len(train_videos.labels))
-    model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+    if os.path.exists(args.filepath):
+        model = load_model(args.filepath)
+    else: # initialize the model if file path doesn't exist
+        model = VGG19_SpatialMotionTemporalGRU(
+            frames_input_shape=(
+                args.num_frames_sampled,
+                224,
+                224,
+                3),
+            poses_input_shape=(
+                args.num_frames_sampled,
+                26),
+            classes=len(train_videos.labels))
+        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
+                    loss='categorical_crossentropy',
+                    metrics=['acc'])
 
     if args.gpu_mode=='single':
         model.fit_generator(
@@ -125,13 +128,13 @@ def train_with_finetune():
     args = parser.parse_args()
 
     train_videos = MyVideos(
-        frames_path='data/MyVideos/frames',
-        poses_path='data/MyVideos/poses',
+        frames_path='data/MyVideos/train/frames/',
+        poses_path='data/MyVideos/train/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     valid_videos = MyVideos(
-        frames_path='data/MyVideos/frames/valid',
-        poses_path='data/MyVideos/poses/valid',
+        frames_path='data/MyVideos/validation/frames',
+        poses_path='data/MyVideos/validation/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     
