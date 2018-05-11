@@ -15,7 +15,7 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from dataloader.split_train_test_video import UCF101_splitter
+from split_train_test_video import UCF101_splitter
  
 class motion_dataset(Dataset):  
     def __init__(self, dic, in_channel, root_dir, mode, transform=None):
@@ -28,35 +28,6 @@ class motion_dataset(Dataset):
         self.in_channel = in_channel
         self.img_rows = 224
         self.img_cols = 224
-
-    def stackopf(self):
-        name = 'v_'+self.video
-        u = self.root_dir+ 'u/' + name
-        v = self.root_dir+ 'v/'+ name
-        
-        flow = torch.FloatTensor(2*self.in_channel,self.img_rows,self.img_cols)
-        i = int(self.clips_idx)
-
-
-        for j in range(self.in_channel):
-            idx = i + j
-            idx = str(idx)
-            frame_idx = 'frame'+ idx.zfill(6)
-            h_image = u +'/' + frame_idx +'.jpg'
-            v_image = v +'/' + frame_idx +'.jpg'
-            
-            imgH=(Image.open(h_image))
-            imgV=(Image.open(v_image))
-
-            H = self.transform(imgH)
-            V = self.transform(imgV)
-
-            
-            flow[2*(j-1),:,:] = H
-            flow[2*(j-1)+1,:,:] = V      
-            imgH.close()
-            imgV.close()  
-        return flow
 
     def __len__(self):
         return len(self.keys)
@@ -83,7 +54,36 @@ class motion_dataset(Dataset):
         else:
             raise ValueError('There are only train and val mode')
         return sample
+        
+    def stackopf(self):
+        name = 'v_'+self.video
+        u = self.root_dir+ 'u/' + name
+        v = self.root_dir+ 'v/'+ name
+        
+        flow = torch.FloatTensor(2*self.in_channel,self.img_rows,self.img_cols)
+        i = int(self.clips_idx)
 
+
+        for j in range(self.in_channel):
+            idx = i + j
+            idx = str(idx)
+            frame_idx = 'frame'+ idx.zfill(6)
+            h_image = u +'/' + frame_idx +'.jpg'
+            v_image = v +'/' + frame_idx +'.jpg'
+            
+            imgH=(Image.open(h_image))
+            imgV=(Image.open(v_image))
+
+            H = self.transform(imgH)
+            V = self.transform(imgV)
+
+            
+            flow[2*(j-1),:,:] = H
+            flow[2*(j-1)+1,:,:] = V
+            print(H.shape, V.shape, flow.shape)      
+            imgH.close()
+            imgV.close()  
+        return flow
 
 class Motion_DataLoader():
     def __init__(self, BATCH_SIZE, num_workers, in_channel,  path, ucf_list, ucf_split):
@@ -99,7 +99,7 @@ class Motion_DataLoader():
         
     def load_frame_count(self):
         #print '==> Loading frame number of each video'
-        with open('dataloader/dic/frame_count.pickle','rb') as file:
+        with open('dataloader/dic/ucf101_frame_count.pickle','rb') as file:
             dic_frame = pickle.load(file)
         file.close()
 
