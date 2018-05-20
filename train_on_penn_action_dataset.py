@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(
     description='Training the spatial motion temporal network')
 parser.add_argument(
     '--filepath',
-    default='checkpoint/spatial_temporal/penn_action.hdf5',
+    default='checkpoint/penn_action.hdf5',
     type=str,
     metavar='PATH',
     help="path to checkpoint best model's state and weights")
@@ -76,7 +76,8 @@ def train():
         frames_path='data/PennAction/validation/frames',
         labels_path='data/PennAction/validation/labels',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        shuffle=False)
     
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
@@ -136,7 +137,8 @@ def train_with_finetune():
         frames_path='data/PennAction/validation/frames',
         labels_path='data/PennAction/validation/labels',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        shuffle=False)
     
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
