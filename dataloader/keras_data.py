@@ -197,15 +197,15 @@ class MyVideos(Sequence):
 
 class PennAction(Sequence):
     def __init__(self, frames_path, labels_path, batch_size,
-                 num_frames_sampled, num_classes=15, shuffle=True):
+                 num_frames_sampled, shuffle=True):
         self.frames_path = frames_path
         self.labels_path = labels_path
         self.get_videos_paths()
         self.extract_mat_file()
-        print('Found {} videos belonging to {} classes'.format(len(self.x), len(self.labels)))
+        self.num_classes = len(self.labels)
+        print('Found {} videos belonging to {} classes'.format(len(self.x), self.num_classes))
         self.batch_size = batch_size
         self.num_frames_sampled = num_frames_sampled
-        self.num_classes = num_classes
         self.shuffle = shuffle
         self.on_train_begin()
         self.on_epoch_end()
@@ -243,7 +243,7 @@ class PennAction(Sequence):
         all_frames = np.array([filename for filename in sorted(
             os.listdir(video_path)) if filename.endswith('.jpg')])
         sampled_frames_idx = sorted(np.random.choice(
-            frame_count, size=int(self.num_frames_sampled), replace=False))
+            frame_count - 1, size=int(self.num_frames_sampled), replace=False))
         return sampled_frames_idx, all_frames[sampled_frames_idx]
     
     def __len__(self):
@@ -289,16 +289,17 @@ class PennAction(Sequence):
 
 
 if __name__=='__main__':
-    # penn_action = PennAction(frames_path='../data/Penn_Action/validation/frames', 
-    #                          labels_path='../data/Penn_Action/validation/labels',
+    import time
+
+    # penn_action = PennAction(frames_path='../data/PennAction/validation/frames', 
+    #                          labels_path='../data/PennAction/validation/labels',
     #                          batch_size=4, num_frames_sampled=16,
     #                          shuffle=False)
-    # for i in range(len(penn_action)):
-    #     x, y = penn_action.__getitem__(i)
-    #     print(x[0].shape, x[1].shape, y.shape)
-    
-    import time
-    
+    # while True:
+    #     for i in range(len(penn_action)):
+    #         x, y = penn_action.__getitem__(i)
+    #         print(x[0].shape, x[1].shape, y.shape)
+        
     my_videos = MyVideos(frames_path='../data/MyVideos/frames', 
                          poses_path='../data/MyVideos/poses',
                          batch_size=4, num_frames_sampled=16,
