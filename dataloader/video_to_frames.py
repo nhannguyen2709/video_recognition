@@ -53,7 +53,7 @@ def process_multiple_videos(path_to_videos, path_to_videos_frames, path_to_frame
     for path, _, filenames in os.walk(path_to_videos):
         for filename in sorted(filenames):
             path_to_video = os.path.join(path, filename)
-            if path_to_video.endswith('.mp4'):
+            if path_to_video.endswith('.mp4') or path_to_video.endswith('.MP4'):
                 video_filename = os.path.splitext(filename)[0]
                 output_loc = os.path.join(
                     path_to_videos_frames, video_filename)
@@ -87,6 +87,7 @@ def process_single_video(path_to_video, path_to_video_frames, path_to_frame_coun
 
 
 if __name__ == '__main__':
-    process_multiple_videos('../data/MyVideos/videos/new_clips_cut',
-                            '../data/MyVideos/frames',
-                            '../dataloader/dic/new_clips_cut.pickle')
+    process_single_video('../output/C0013.MP4', '../output/c0013.mp4_frames', '../dataloader/dic/new_videos_frame_count.pickle')
+    # process_multiple_videos('../data/MyVideos/videos/new_clips_cut',
+    #                         '../data/MyVideos/frames',
+    #                         '../dataloader/dic/new_clips_cut_14_05.pickle')
