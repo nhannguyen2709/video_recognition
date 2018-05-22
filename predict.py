@@ -4,11 +4,12 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import matplotlib.pyplot as plt
 import numpy as np
 
-from dataloader.keras_data import PennAction, MyVideos
+from dataloader.keras_data import MyVideos, PennAction
 from keras.models import load_model
 
 from sklearn.metrics import accuracy_score, confusion_matrix
 
+from keras_models import VGG19_SpatialMotionTemporalGRU
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
@@ -30,10 +31,10 @@ def plot_confusion_matrix(cm, classes,
     plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=45)
+    plt.xticks(tick_marks, classes, rotation=90)
     plt.yticks(tick_marks, classes)
 
-    fmt = '.2f' if normalize else 'd'
+    fmt = '.1f' if normalize else 'd'
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, format(cm[i, j], fmt),
@@ -53,9 +54,17 @@ valid_videos = PennAction(
         batch_size=8,
         num_frames_sampled=16,
         shuffle=False)
+# model = VGG19_SpatialMotionTemporalGRU((None, 224, 224, 3), (None, 26), 5)
+# model.load_weights('checkpoint/my_videos.hdf5')
+# valid_videos = MyVideos(
+#     frames_path='data/MyVideos/validation/frames',
+#     poses_path='data/MyVideos/validation/poses',
+#     batch_size=4,
+#     num_frames_sampled=32,
+#     shuffle=False)
 
 # Predict
-num_sampling_times = 25
+num_sampling_times = 5
 num_classes = valid_videos.num_classes
 y_true = valid_videos.y
 class_names = valid_videos.labels
@@ -70,7 +79,7 @@ np.save('checkpoint/penn_action_pred.npy', y_pred)
 # Compute confusion matrix
 cnf_matrix = confusion_matrix(y_true, y_pred)
 print('Accuracy: {}'.format(accuracy_score(y_true, y_pred)))
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=1)
 
 # Plot normalized confusion matrix
 plt.figure()
