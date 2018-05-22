@@ -29,8 +29,7 @@ class MultiGPUModel(Model):
 
 def VGG19_Attention_LSTM(
         frames_input_shape,
-        classes,
-        finetune_conv_layers=False):
+        classes):
     frames = Input(shape=frames_input_shape, name='frames')
     # Block 1
     frames_features = TimeDistributed(
@@ -219,11 +218,6 @@ def VGG19_Attention_LSTM(
     for i, layer in enumerate(vgg19.layers[:-1]):
         model.layers[i].set_weights(weights=layer.get_weights())
         model.layers[i].trainable = False
-
-    # Finetune the last 2 convolutional layers in block 5 of VGG19
-    if finetune_conv_layers:
-        model.layers[-12].trainable = True
-        model.layers[-13].trainable = True
 
     return model
 
