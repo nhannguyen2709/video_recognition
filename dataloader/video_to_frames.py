@@ -87,6 +87,6 @@ def process_single_video(path_to_video, path_to_video_frames, path_to_frame_coun
 
 
 if __name__ == '__main__':
-    process_multiple_videos('../data/MyVideos/new_cut_clips',
+    process_multiple_videos('../data/MyVideos/videos/new_clips_cut',
                             '../data/MyVideos/frames',
-                            '../dataloader/dic/new_cut_clips.pickle')
+                            '../dataloader/dic/new_clips_cut.pickle')

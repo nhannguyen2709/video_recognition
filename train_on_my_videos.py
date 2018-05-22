@@ -1,6 +1,5 @@
 import argparse
 import os
-
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 from keras.backend import tensorflow_backend as K
@@ -15,10 +14,16 @@ parser = argparse.ArgumentParser(
     description='Training the spatial motion temporal network')
 parser.add_argument(
     '--filepath',
-    default='checkpoint/spatial_temporal/my_videos.hdf5',
+    default='checkpoint/my_videos.hdf5',
     type=str,
     metavar='PATH',
     help="path to checkpoint best model's state and weights")
+parser.add_argument(
+    '--pretrained',
+    default='checkpoint/penn_action.hdf5',
+    type=str,
+    metavar='PATH',
+    help="path to pretrained model weights")
 parser.add_argument(
     '--epochs',
     default=50,
@@ -27,7 +32,7 @@ parser.add_argument(
     help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=8,
+    default=4,
     type=int,
     metavar='N',
     help='number of videos in a single mini-batch')
@@ -68,15 +73,16 @@ def train():
     print(args)
 
     train_videos = MyVideos(
-        frames_path='data/MyVideos/frames/train',
-        poses_path='data/MyVideos/poses/train',
+        frames_path='data/MyVideos/train/frames/',
+        poses_path='data/MyVideos/train/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     valid_videos = MyVideos(
-        frames_path='data/MyVideos/frames/valid',
-        poses_path='data/MyVideos/poses/valid',
+        frames_path='data/MyVideos/validation/frames',
+        poses_path='data/MyVideos/validation/poses',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        shuffle=False)
     
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
@@ -88,19 +94,29 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr]
 
-    model = VGG19_SpatialMotionTemporalGRU(
-        frames_input_shape=(
-            args.num_frames_sampled,
-            224,
-            224,
-            3),
-        poses_input_shape=(
-            args.num_frames_sampled,
-            26),
-        classes=len(train_videos.labels))
-    model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+    if os.path.exists(args.filepath):
+        model = load_model(args.filepath)
+    else: # initialize the model if file path doesn't exist
+        pretrained_model = load_model(args.pretrained)
+        model = VGG19_SpatialMotionTemporalGRU(
+            frames_input_shape=(
+                args.num_frames_sampled,
+                224,
+                224,
+                3),
+            poses_input_shape=(
+                args.num_frames_sampled,
+                26),
+            classes=len(train_videos.labels))
+        for i, layer in enumerate(model.layers[:-3]):
+            layer.set_weights(pretrained_model.layers[i].get_weights())
+        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
+                    loss='categorical_crossentropy',
+                    metrics=['acc'])
+        # hacky trick to avoid exhausting GPU's memory
+        model.save(args.filepath)
+        K.clear_session()
+        model = load_model(args.filepath)
 
     if args.gpu_mode=='single':
         model.fit_generator(
@@ -125,15 +141,16 @@ def train_with_finetune():
     args = parser.parse_args()
 
     train_videos = MyVideos(
-        frames_path='data/MyVideos/frames',
-        poses_path='data/MyVideos/poses',
+        frames_path='data/MyVideos/train/frames/',
+        poses_path='data/MyVideos/train/poses',
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled)
     valid_videos = MyVideos(
-        frames_path='data/MyVideos/frames/valid',
-        poses_path='data/MyVideos/poses/valid',
+        frames_path='data/MyVideos/validation/frames',
+        poses_path='data/MyVideos/validation/poses',
         batch_size=args.batch_size,
-        num_frames_sampled=args.num_frames_sampled)
+        num_frames_sampled=args.num_frames_sampled,
+        shuffle=False)
     
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
