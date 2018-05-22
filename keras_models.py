@@ -831,12 +831,12 @@ def TemporalSegmentNetworks_MotionStream(input_shape, dropout_prob, classes, par
 
 
 if __name__ == '__main__':
-    # model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(32, 224, 224, 3), 
-    #                                        poses_input_shape=(32, 26), classes=3)
-    # model.summary()
-    # model = VGG19_Attention_LSTM(frames_input_shape=(None, 224, 224, 3), classes=15, finetune_conv_layers=True)
-    # model.summary()
-    # model = TemporalSegmentNetworks_SpatialStream(input_shape=(299, 299, 3), dropout_prob=0.8, classes=101)
-    # model.summary()
+    model = VGG19_SpatialMotionTemporalGRU(frames_input_shape=(None, 224, 224, 3), 
+                                           poses_input_shape=(None, 26), classes=3)
+    model.summary()
+    model = VGG19_Attention_LSTM(frames_input_shape=(None, 224, 224, 3), classes=15)
+    model.summary()
+    model = TemporalSegmentNetworks_SpatialStream(input_shape=(299, 299, 3), dropout_prob=0.8, classes=101)
+    model.summary()
     model = TemporalSegmentNetworks_MotionStream(input_shape=(299, 299, 20), dropout_prob=0.7, classes=101)
     model.summary()
