@@ -2,7 +2,8 @@ import os
 import pickle
 import numpy as np
 from scipy import io
-
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.preprocessing import LabelEncoder
 
 class UCF101_splitter:
     def __init__(self, path, split):
@@ -70,12 +71,12 @@ class MyVideos_splitter:
         self.frames_path = frames_path
 
     def split_video(self):
-        videos_frames = np.array(sorted(os.listdir(self.frames_path)))
-        num_videos = len(videos_frames)
-        train_idx = np.random.choice(num_videos, size=round(num_videos*0.9), replace=False)
-        valid_idx = np.setdiff1d(np.arange(num_videos), train_idx)
-
-        return videos_frames[train_idx], videos_frames[valid_idx]
+        le = LabelEncoder()
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1)
+        videos = np.array(sorted(os.listdir(self.frames_path)))
+        labels = le.fit_transform([video.split('_')[0] for video in videos])
+        for train_idx, valid_idx in sss.split(videos, labels):
+            return videos[train_idx], videos[valid_idx]
 
 
 class PennAction_splitter:
