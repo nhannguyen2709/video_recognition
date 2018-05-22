@@ -290,16 +290,7 @@ class PennAction(Sequence):
 
 if __name__=='__main__':
     import time
-
-    # penn_action = PennAction(frames_path='../data/PennAction/validation/frames', 
-    #                          labels_path='../data/PennAction/validation/labels',
-    #                          batch_size=4, num_frames_sampled=16,
-    #                          shuffle=False)
-    # while True:
-    #     for i in range(len(penn_action)):
-    #         x, y = penn_action.__getitem__(i)
-    #         print(x[0].shape, x[1].shape, y.shape)
-        
+    
     my_videos = MyVideos(frames_path='../data/MyVideos/frames', 
                          poses_path='../data/MyVideos/poses',
                          batch_size=4, num_frames_sampled=16,
