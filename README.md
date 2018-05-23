@@ -57,8 +57,11 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
  ## 3. Results
   ### UCF101
 
-| Accuracy                          | RGB   | Flow  | RGB+Flow |
+| Accuracy (%)                      | RGB   | Flow  | RGB+Flow |
 |-----------------------------------|-------|-------|----------|
-| Xception 
-(ImageNet pre-trained, 
- no train/test augmentation)       | 83.61 |       |          |
+| Xception (no data augmentation)   | 83.61 |       |          |
+
+  ### Penn Action
+| Accuracy (%)                      | RGB+Poses|
+|-----------------------------------|----------|
+| Two-stream VGG19-GRU              | 93.52    |
