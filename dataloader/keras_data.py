@@ -16,6 +16,7 @@ class UCF101Frames(Sequence):
     def __init__(self, frames_path, batch_size, shuffle=True):
         self.frames_path = frames_path
         self.get_video_frames_paths_and_labels()
+        print('Found {} videos belonging to {} classes'.format(len(self.x), len(self.labels)))
         self.batch_size = batch_size
         self.num_classes = len(self.labels)
         self.shuffle = shuffle
@@ -55,9 +56,9 @@ class UCF101Frames(Sequence):
         batch_x = self.x[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        batch_segment1_frames = np.zeros((self.batch_size, 299, 299, 3))
-        batch_segment2_frames = np.zeros((self.batch_size, 299, 299, 3))
-        batch_segment3_frames = np.zeros((self.batch_size, 299, 299, 3))
+        batch_segment1_frames = np.zeros((len(batch_x), 299, 299, 3))
+        batch_segment2_frames = np.zeros((len(batch_x), 299, 299, 3))
+        batch_segment3_frames = np.zeros((len(batch_x), 299, 299, 3))
         
         for i, video_path in enumerate(batch_x):
             segment1_sampled_frame, segment2_sampled_frame, segment3_sampled_frame = self.sample_frames(video_path)
@@ -274,7 +275,7 @@ if __name__=='__main__':
     #     end = time.time()
     #     print('Time taken to load a batch of {} videos: {}'.format(y.shape[0], end - start))
 
-    ucf101_frames = UCF101Frames(frames_path='../data/UCF101/frames', batch_size=32, shuffle=False)
+    ucf101_frames = UCF101Frames(frames_path='../data/UCF101/train/frames', batch_size=8, shuffle=False)
     print(ucf101_frames.labels)
     for i in range(len(ucf101_frames)):
         start = time.time()
