@@ -55,9 +55,10 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
   I made a tweak to combine the architectures from these two papers. To process RGB frames, I used a time-distributed, pre-trained VGG19 with a global max pooling layer after the last convolutional layer. The video representation learned by the VGG19 will be then fed into a 2 layer GRU network. The 2D human poses obtained in every sampled frame will be fed into a 3 layer GRU network. I fuse the frames stream and poses stream predictions by averaging their softmax outputs.
   
  ## 3. Results
->
-     network      | top1     |
-                  | accuracy |  
-TSN spatial cnn   | 83.5%    | 
-Motion cnn        | TBD      | 
-Average fusion    | TBD      |  
+  ### UCF101
+
+| Accuracy                          | RGB   | Flow  | RGB+Flow |
+|-----------------------------------|-------|-------|----------|
+| Xception 
+| (ImageNet pre-trained, 
+| no train/test augmentation)       | 83.61 |       |          |
