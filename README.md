@@ -56,6 +56,7 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
   
  ## 3. Results
     ### 3.1 UCF101 Dataset
+>
      network      | top1     |
                   | accuracy |  
     --------------|:-----:   |
