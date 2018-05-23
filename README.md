@@ -81,5 +81,7 @@ python3 predict.py
 
 ## 5. TODO
 `TODO Train the motion stream of the Temporal Segment Networks`
+>
 `TODO Add data augmentation when training networks`
+>
 `TODO Apply test-time augmentation to improve models' performance`
