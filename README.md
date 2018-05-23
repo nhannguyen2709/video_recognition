@@ -65,3 +65,21 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 | Accuracy (%)                      | RGB+Poses|
 |-----------------------------------|----------|
 | Two-stream VGG19-GRU              | 93.52    |
+
+## 4. Run on your device
+* Training
+Modify `num-workers`, `gpu-mode` and `num-gpus` arguments based on your device configuration to use built multi-gpu support in Keras
+```
+python3 train_tsn_spatial_stream.py --epochs=15
+python3 train_on_penn_action_dataset.py
+```
+* Testing
+Only on Penn Action dataset
+```
+python3 predict.py
+```
+
+## 5. TODO
+`TODO Train the motion stream of the Temporal Segment Networks`
+`TODO Add data augmentation when training networks`
+`TODO Apply test-time augmentation to improve models' performance`
