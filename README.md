@@ -67,13 +67,15 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 | Two-stream VGG19-GRU              | 93.52    |
 
 ## 4. Run on your device
-* Training
+* Training:
+>
 Modify `num-workers`, `gpu-mode` and `num-gpus` arguments based on your device configuration to use built multi-gpu support in Keras
 ```
 python3 train_tsn_spatial_stream.py --epochs=15
 python3 train_on_penn_action_dataset.py
 ```
-* Testing
+* Testing:
+>
 Only on Penn Action dataset
 ```
 python3 predict.py
