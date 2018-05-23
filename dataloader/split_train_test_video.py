@@ -29,11 +29,11 @@ def split_ucf101_dataset(split='01'):
           len(test_videos)))
 
     train_frames_dst = '../data/UCF101/train/frames'
-    test_frames_dst = '../data/UCF101/test/frames'
+    test_frames_dst = '../data/UCF101/validation/frames'
     train_u_dst = '../data/UCF101/train/tvl1_flow/u'
-    test_u_dst = '../data/UCF101/test/tvl1_flow/u'
+    test_u_dst = '../data/UCF101/validation/tvl1_flow/u'
     train_v_dst = '../data/UCF101/train/tvl1_flow/v'
-    test_v_dst = '../data/UCF101/test/tvl1_flow/v'
+    test_v_dst = '../data/UCF101/validation/tvl1_flow/v'
 
     for train_video in tqdm(sorted(train_videos.keys())):
         train_video_name = 'v_' + train_video
