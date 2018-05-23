@@ -17,30 +17,41 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 shutil.copy2(s, d)
 
 
-def split_ucf101_dataset():
-    splits = ['01', '02', '03']
-    data_path = '../data/UCF101/frames/'
-    
-    for split in splits:
-        splitter = UCF101_splitter(path='UCF_list/', split=split)
-        train_video, test_video = splitter.split_video()
-        print(
-            'Train videos: {}, validation videos: {}'.format(
-                len(train_video),
-                len(test_video)))
+def split_ucf101_dataset(split='01'):
+    frames_path = '../data/UCF101/frames'
+    u_path = '../data/UCF101/tvl1_flow/u'
+    v_path = '../data/UCF101/tvl1_flow/v'
 
-        train_dst = '../data/UCF101/train_videos_' + split
-        test_dst = '../data/UCF101/test_videos_' + split
+    splitter = UCF101_splitter(path='../UCF_list/', split=split)
+    train_videos, test_videos = splitter.split_video()
+    print('Train videos: {}, validation videos: {}'.format(
+          len(train_videos),
+          len(test_videos)))
 
-        for train_video in tqdm(sorted(train_video.keys())):
-            train_video_name = 'v_' + train_video
-            copytree(os.path.join(data_path, train_video_name),
-                     os.path.join(train_dst, train_video_name))
+    train_frames_dst = '../data/UCF101/train/frames'
+    test_frames_dst = '../data/UCF101/test/frames'
+    train_u_dst = '../data/UCF101/train/tvl1_flow/u'
+    test_u_dst = '../data/UCF101/test/tvl1_flow/u'
+    train_v_dst = '../data/UCF101/train/tvl1_flow/v'
+    test_v_dst = '../data/UCF101/test/tvl1_flow/v'
 
-        for test_video in tqdm(sorted(test_video.keys())):
-            test_video_name = 'v_' + test_video
-            copytree(os.path.join(data_path, test_video_name),
-                     os.path.join(test_dst, test_video_name))
+    for train_video in tqdm(sorted(train_videos.keys())):
+        train_video_name = 'v_' + train_video
+        copytree(os.path.join(frames_path, train_video_name),
+                 os.path.join(train_frames_dst, train_video_name))
+        copytree(os.path.join(u_path, train_video_name),
+                 os.path.join(train_u_dst, train_video_name))
+        copytree(os.path.join(v_path, train_video_name),
+                 os.path.join(train_v_dst, train_video_name))
+
+    for test_video in tqdm(sorted(test_videos.keys())):
+        test_video_name = 'v_' + test_video
+        copytree(os.path.join(frames_path, test_video_name),
+                 os.path.join(test_frames_dst, test_video_name))
+        copytree(os.path.join(u_path, test_video_name),
+                 os.path.join(test_u_dst, test_video_name))
+        copytree(os.path.join(v_path, test_video_name),
+                 os.path.join(test_v_dst, test_video_name))
 
 
 def split_my_videos_dataset():
@@ -105,4 +116,4 @@ def split_penn_action_dataset():
 
 
 if __name__ == '__main__':
-    split_my_videos_dataset()
+    split_ucf101_dataset()
