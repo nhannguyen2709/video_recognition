@@ -24,7 +24,7 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 
 ## 1. Data
   ### 1.1 UCF101 Dataset 
-  Download the preprocessed data directly from [feichtenhofer/twostreamfusion](https://github.com/feichtenhofer/twostreamfusion))
+  Download the preprocessed data directly from [feichtenhofer/twostreamfusion](https://github.com/feichtenhofer/twostreamfusion)
   * RGB images
   ```
   wget http://ftp.tugraz.at/pub/feichtenhofer/tsfusion/data/ucf101_jpegs_256.zip.001
@@ -46,4 +46,4 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
   ### 1.2 PennAction Dataset
   Available for download via the following link: https://upenn.box.com/PennAction
   ### 1.3 MyVideos Dataset
-  Consists of 80 own recorded videos on 5 different actions (PickUpObject, TakeOffShoes, TakeOffClothes, Stealing and NotStealing). RGB   frames and human poses from each video in this dataset were extracted using `OpenCV` and [CMU's OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose)) libraries.
+  Consists of 80 own recorded videos on 5 different actions (PickUpObject, TakeOffShoes, TakeOffClothes, Stealing and NotStealing). RGB   frames and human poses from each video in this dataset were extracted using `OpenCV` and [CMU's OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) libraries.
