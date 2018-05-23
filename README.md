@@ -59,7 +59,7 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 
 | Accuracy (%)                      | RGB   | Flow  | RGB+Flow |
 |-----------------------------------|-------|-------|----------|
-| Xception (no data augmentation)   | 83.61 |       |          |
+| Xception (no data augmentation)   | 83.66 |       |          |
 
   ### Penn Action
 | Accuracy (%)                      | RGB+Poses|
@@ -71,7 +71,7 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 >
 Modify `num-workers`, `gpu-mode` and `num-gpus` arguments based on your device configuration to use built multi-gpu support in Keras
 ```
-python3 train_tsn_spatial_stream.py --epochs=15
+python3 train_tsn_spatial_stream.py
 python3 train_on_penn_action_dataset.py
 ```
 * Testing:
