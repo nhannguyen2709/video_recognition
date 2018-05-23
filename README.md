@@ -69,7 +69,8 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 ## 4. Run on your device
 * Training:
 >
-Modify `num-workers`, `gpu-mode` and `num-gpus` arguments based on your device configuration to use built multi-gpu support in Keras
+Modify `num-workers`, `gpu-mode` and `num-gpus` arguments based on your device configuration to use built multi-gpu support in Keras.
+On a single GTX 1070Ti, training the TSN's spatial stream on UCF101 data took approximately 7.5 hours; training the two-stream VGG19-GRU on Penn Action data took approximately 3 hours.
 ```
 python3 train_tsn_spatial_stream.py
 python3 train_on_penn_action_dataset.py
