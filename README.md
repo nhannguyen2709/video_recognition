@@ -47,3 +47,18 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
   Available for download via the following link: https://upenn.box.com/PennAction
   ### 1.3 MyVideos Dataset
   Consists of 80 own recorded videos on 5 different actions (PickUpObject, TakeOffShoes, TakeOffClothes, Stealing and NotStealing). RGB   frames and human poses from each video in this dataset were extracted using `OpenCV` and [CMU's OpenPose](https://github.com/CMU-Perceptual-Computing-Lab/openpose) libraries.
+
+## 2. Training
+  ### 2.1 Temporal Segment Networks (TSN)
+  The original paper used the BN-InceptionV3 pre-trained on ImageNet as the base conv. network. I used the [pre-trained Xception network provided in Keras](https://github.com/keras-team/keras/blob/master/keras/applications/xception.py) as my base model. Training strategies and implementation details of the original paper such as partial batch-normalization with dropout, using SGD optimizer, learning rate schedules were followed closely. Training data augmentation and ImageNet-style test-time augmentation will be added soon.
+  ### 2.2 Two-stream RNN-CNN / VideoLSTM
+  I made a tweak to combine the architectures from these two papers. To process RGB frames, I used a time-distributed, pre-trained VGG19 with a global max pooling layer after the last convolutional layer. The video representation learned by the VGG19 will be then fed into a 2 layer GRU network. The 2D human poses obtained in every sampled frame will be fed into a 3 layer GRU network. I fuse the frames stream and poses stream predictions by averaging their softmax outputs.
+  
+ ## 3. Results
+    ### 3.1 UCF101 Dataset
+     network      | top1     |
+                  | accuracy |  
+    --------------|:-----:   |
+TSN spatial cnn   | 83.5%    | 
+Motion cnn        | TBD      | 
+Average fusion    | TBD      |  
