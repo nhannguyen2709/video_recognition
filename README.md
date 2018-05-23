@@ -60,5 +60,5 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 | Accuracy                          | RGB   | Flow  | RGB+Flow |
 |-----------------------------------|-------|-------|----------|
 | Xception 
-| (ImageNet pre-trained, 
-| no train/test augmentation)       | 83.61 |       |          |
+(ImageNet pre-trained, 
+ no train/test augmentation)       | 83.61 |       |          |
