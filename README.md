@@ -59,7 +59,6 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 >
      network      | top1     |
                   | accuracy |  
-    --------------|:-----:   |
 TSN spatial cnn   | 83.5%    | 
 Motion cnn        | TBD      | 
 Average fusion    | TBD      |  
