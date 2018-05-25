@@ -82,7 +82,8 @@ class UCF101Frames(Sequence):
 
 
 class UCF101Flows(Sequence):
-    def __init__(self, frames_path, batch_size, num_frames_taken=10, shuffle=True):
+    def __init__(self, frames_path, batch_size,
+                 num_frames_taken=10, shuffle=True):
         self.frames_path = frames_path
         self.get_video_frames_paths_and_labels()
         print('Found {} videos belonging to {} classes'.format(
@@ -106,25 +107,34 @@ class UCF101Flows(Sequence):
         videos = sorted(os.listdir(self.frames_path))
         self.x = [os.path.join(self.frames_path, video)
                   for video in videos]
-        self.x_u = [video_path.replace('frames', 'tvl1_flow/u') for video_path in self.x]
-        self.x_v = [video_path.replace('frames', 'tvl1_flow/v') for video_path in self.x]
+        self.x_u = [
+            video_path.replace(
+                'frames',
+                'tvl1_flow/u') for video_path in self.x]
+        self.x_v = [
+            video_path.replace(
+                'frames',
+                'tvl1_flow/v') for video_path in self.x]
         self.labels = sorted(set([video.split('_')[1] for video in videos]))
         self.y = []
         for video in videos:
             self.y.append(self.labels.index(video.split('_')[1]))
 
     def sample_and_stack_flows(self, u_path, v_path):
-        all_frames = [filename for filename in sorted(os.listdir(u_path)) 
+        all_frames = [filename for filename in sorted(os.listdir(u_path))
                       if filename.endswith('.jpg')]
-        all_frames_u_path = np.array([os.path.join(u_path, filename) for filename in all_frames])
-        all_frames_v_path = np.array([os.path.join(v_path, filename) for filename in all_frames])
+        all_frames_u_path = np.array(
+            [os.path.join(u_path, filename) for filename in all_frames])
+        all_frames_v_path = np.array(
+            [os.path.join(v_path, filename) for filename in all_frames])
 
         start_idx = np.random.randint(len(all_frames) - self.num_frames_taken)
         end_idx = start_idx + self.num_frames_taken
         sampled_idx = np.arange(start_idx, end_idx)
 
         # sample 2 arrays of u frames and v frames then interweave
-        return np.ravel((all_frames_u_path[sampled_idx], all_frames_v_path[sampled_idx]), order='F')
+        return np.ravel(
+            (all_frames_u_path[sampled_idx], all_frames_v_path[sampled_idx]), order='F')
 
     def __len__(self):
         return int(np.ceil(len(self.x) / float(self.batch_size)))
@@ -134,20 +144,23 @@ class UCF101Flows(Sequence):
         batch_x_v = self.x_v[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        # flow input shape is (batch_size, 299, 299, 2L) where L is num_frames_taken
-        batch_flows = np.zeros((len(batch_x_u), 299, 299, 2 * self.num_frames_taken)) 
+        # flow input shape is (batch_size, 299, 299, 2L) where L is
+        # num_frames_taken
+        batch_flows = np.zeros(
+            (len(batch_x_u), 299, 299, 2 * self.num_frames_taken))
 
         for i, u_path in enumerate(batch_x_u):
             v_path = batch_x_v[i]
             sampled_flow_frames = self.sample_and_stack_flows(u_path, v_path)
-            batch_flows[i] = np.stack([np.mean(resize(imread(frame), (299, 299)), axis=-1) for frame in sampled_flow_frames], axis=-1)
+            batch_flows[i] = np.stack([np.mean(resize(
+                imread(frame), (299, 299)), axis=-1) for frame in sampled_flow_frames], axis=-1)
 
         batch_flows /= 255.
 
         return batch_flows, to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
 
-            
+
 class MyVideos(Sequence):
     def __init__(self, frames_path, poses_path, batch_size,
                  num_frames_sampled, shuffle=True):
