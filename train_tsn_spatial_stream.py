@@ -27,7 +27,7 @@ parser.add_argument(
     help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=256,
+    default=8,
     type=int,
     metavar='N',
     help='number of videos in a single mini-batch')
@@ -57,7 +57,7 @@ parser.add_argument(
 
 
 def schedule(epoch, lr):
-    if epoch + 1 % 50 == 0:
+    if epoch + 1 % 10 == 0:
         return lr * 0.1
     else: 
         return lr

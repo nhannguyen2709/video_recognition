@@ -21,7 +21,7 @@ parser.add_argument(
     help="path to checkpoint best model's state and weights")
 parser.add_argument(
     '--epochs',
-    default=80,
+    default=60,
     type=int,
     metavar='N',
     help='number of total epochs')
@@ -57,9 +57,9 @@ parser.add_argument(
 
 
 def schedule(epoch, lr):
-    if epoch + 1 % 48 == 0:
+    if epoch + 1 % 36 == 0:
         return lr * 0.1
-    elif epoch + 1 % 72 == 0:
+    elif epoch + 1 % 54 == 0:
         return lr * 0.1
     else: 
         return lr
@@ -79,7 +79,7 @@ def train():
         shuffle=False)
     
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
-                                  patience=2, verbose=1)
+                                  patience=5, verbose=1)
     lr_scheduler = LearningRateScheduler(schedule=schedule)
     save_best = ModelCheckpoint(
         args.filepath,
