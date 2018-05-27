@@ -6,7 +6,7 @@ from keras.layers import Dense, Flatten, Input
 from keras.layers import Conv2D, ConvLSTM2D, SeparableConv2D, BatchNormalization, MaxPooling2D, GlobalMaxPooling2D, GlobalAveragePooling2D
 from keras.layers import Bidirectional, GRU, TimeDistributed
 from keras.layers import Activation, Add, Average, Multiply, Dropout
-from keras.models import Model
+from keras.models import Model, load_model
 from keras.utils import multi_gpu_model
 
 
@@ -698,12 +698,14 @@ def TemporalSegmentNetworks_SpatialStream(input_shape, dropout_prob, classes, pa
     x = Activation(activation='softmax', name='predictions')(class_scores)
     
     model = Model(inputs=[img_input_1, img_input_2, img_input_3], outputs=x)
+    
     xception = Xception(include_top=False, pooling='avg')
     for i, layer in enumerate(xception.layers[1:]):
         model.layers[i+3].set_weights(layer.get_weights())
+
     # partial batch-normalization
-    num_bn_layers = 0
     if partial_bn:
+        num_bn_layers = 0
         for layer in model.layers:
             layer_name = str(layer)
             if 'BatchNormalization' in layer_name:
@@ -714,7 +716,7 @@ def TemporalSegmentNetworks_SpatialStream(input_shape, dropout_prob, classes, pa
     return model
 
 
-def TemporalSegmentNetworks_MotionStream(input_shape, dropout_prob, classes, partial_bn=True):
+def TemporalSegmentNetworks_MotionStream(input_shape, dropout_prob, classes, weights='spatial_stream', partial_bn=True):
     flow_input = Input(shape=input_shape)
     
     x = Conv2D(32, (3, 3), strides=(2, 2), use_bias=False, name='block1_conv1')(flow_input)
@@ -808,18 +810,27 @@ def TemporalSegmentNetworks_MotionStream(input_shape, dropout_prob, classes, par
     x = Dense(classes, activation='softmax', name='predictions')(x)
     
     model = Model(inputs=flow_input, outputs=x)
-    xception = Xception(include_top=False, pooling='avg')
-    for i, layer in enumerate(xception.layers[2:]):
-        model.layers[i+2].set_weights(layer.get_weights())
+    
+    if weights == 'imagenet':
+        xception = Xception(include_top=False, pooling='avg')
+        for old_layer, new_layer in zip(xception.layers[2:], model.layers[2:]):
+            new_layer.set_weights(old_layer.get_weights())
+        weights = xception.layers[1].get_weights()[0]
+
+    elif weights == 'spatial_stream':
+        xception = load_model('checkpoint/ucf101_spatial_stream.hdf5')
+        for old_layer, new_layer in zip(xception.layers[4:], model.layers[2:]):
+            new_layer.set_weights(old_layer.get_weights())
+        weights = xception.layers[3].get_weights()[0]
+    
     # cross-modality pre-training
-    weights = xception.layers[1].get_weights()[0]
     weights = np.average(weights, axis=2)
     weights = np.reshape(weights, (weights.shape[0], weights.shape[1], 1, weights.shape[2]))
     weights = np.dstack([weights]*input_shape[2])
     model.layers[1].set_weights([weights])
     # partial batch-normalization
-    num_bn_layers = 0
     if partial_bn:
+        num_bn_layers = 0
         for layer in model.layers:
             layer_name = str(layer)
             if 'BatchNormalization' in layer_name:
