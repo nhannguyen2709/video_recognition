@@ -11,13 +11,13 @@ import pyflow
 parser = argparse.ArgumentParser(
     description='Generate optical flows from video frames using python wrapper of Coarse2Fine Optical Flow')
 parser.add_argument(
-    '--data_dir', default='../data/NewVideos/jpegs_256/', type=str, 
+    '--data_dir', default='../data/UCF101/frames/', type=str, 
     metavar='PATH', help='path to input video frames')
 parser.add_argument(
-    '--u_dir', default='../data/NewVideos/tvl1_flow/u/', type=str, 
+    '--u_dir', default='../data/UCF101/tvl1_flow/u/', type=str, 
     metavar='PATH', help='path to generated u flows')
 parser.add_argument(
-    '--v_dir', default='../data/NewVideos/tvl1_flow/v/', type=str,
+    '--v_dir', default='../data/UCF101/tvl1_flow/v/', type=str,
     metavar='PATH', help='path to generated v flows'
 )
 
