@@ -90,7 +90,7 @@ class UCF101Flows(Sequence):
             len(self.x), len(self.labels)))
         self.batch_size = batch_size
         self.num_classes = len(self.labels)
-	self.color_channel_weights = color_channel_weights
+        self.color_channel_weights = color_channel_weights
         self.num_frames_taken = num_frames_taken
         self.shuffle = shuffle
         self.on_train_begin()
@@ -154,7 +154,7 @@ class UCF101Flows(Sequence):
             v_path = batch_x_v[i]
             sampled_flow_frames = self.sample_and_stack_flows(u_path, v_path)
             batch_flows[i] = np.stack([np.average(resize(
-                imread(frame), (299, 299)), axis=-1, weights=self.color_channel_weights) for frame in sampled_flow_frames], axis=-1) # OpenCV uses BGR color order
+                imread(frame), (299, 299)), axis=-1, weights=self.color_channel_weights) for frame in sampled_flow_frames], axis=-1)  # OpenCV uses BGR color order
 
         batch_flows /= 255.
 
