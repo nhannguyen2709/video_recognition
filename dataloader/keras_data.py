@@ -82,7 +82,7 @@ class UCF101Frames(Sequence):
 
 
 class UCF101Flows(Sequence):
-    def __init__(self, frames_path, batch_size,
+    def __init__(self, frames_path, batch_size, color_channel_weights=[0.114, 0.587, 0.299],
                  num_frames_taken=10, shuffle=True):
         self.frames_path = frames_path
         self.get_video_frames_paths_and_labels()
@@ -90,6 +90,7 @@ class UCF101Flows(Sequence):
             len(self.x), len(self.labels)))
         self.batch_size = batch_size
         self.num_classes = len(self.labels)
+	self.color_channel_weights = color_channel_weights
         self.num_frames_taken = num_frames_taken
         self.shuffle = shuffle
         self.on_train_begin()
@@ -152,8 +153,8 @@ class UCF101Flows(Sequence):
         for i, u_path in enumerate(batch_x_u):
             v_path = batch_x_v[i]
             sampled_flow_frames = self.sample_and_stack_flows(u_path, v_path)
-            batch_flows[i] = np.stack([np.mean(resize(
-                imread(frame), (299, 299)), axis=-1) for frame in sampled_flow_frames], axis=-1)
+            batch_flows[i] = np.stack([np.average(resize(
+                imread(frame), (299, 299)), axis=-1, weights=self.color_channel_weights) for frame in sampled_flow_frames], axis=-1) # OpenCV uses BGR color order
 
         batch_flows /= 255.
 
