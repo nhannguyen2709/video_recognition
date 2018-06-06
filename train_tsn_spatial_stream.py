@@ -43,12 +43,6 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
-parser.add_argument(
-    '--num-gpus',
-    default=2,
-    type=int,
-    metavar='N',
-    help='number of GPUs on the device')
 
 
 def schedule(epoch, lr):
