@@ -1,5 +1,6 @@
 import argparse
 import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 from keras.backend import tensorflow_backend as K
@@ -42,17 +43,6 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
-parser.add_argument(
-    '--num-gpus',
-    default=2,
-    type=int,
-    metavar='N',
-    help='number of GPUs on the device')
-parser.add_argument(
-    '--gpu-mode',
-    default='single',
-    type=str,
-    help='gpu mode (single or multi)')
 
 
 def schedule(epoch, lr):
@@ -88,38 +78,22 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr, lr_scheduler]
 
-    with tf.device('/CPU:0'):
-        if os.path.exists(args.filepath):
-            model = load_model(args.filepath)
-        else:
-            model = TemporalSegmentNetworks_MotionStream(
-                input_shape=(299, 299, 20), dropout_prob=0.7,
-                classes=len(train_videos.labels))
-
-    if args.gpu_mode == 'single':
-        model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
-                      loss='categorical_crossentropy',
-                      metrics=['acc'])
-        model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
+    if os.path.exists(args.filepath):
+        model = load_model(args.filepath)
     else:
-        parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(
-            optimizer=SGD(
-                lr=args.train_lr,
-                momentum=0.9),
-            loss='categorical_crossentropy',
-            metrics=['acc'])
-        parallel_model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
+        model = TemporalSegmentNetworks_MotionStream(
+            input_shape=(299, 299, 20), dropout_prob=0.7,
+            classes=len(train_videos.labels))
+
+    model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
+    model.fit_generator(
+        generator=train_videos,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        workers=args.num_workers,
+        validation_data=valid_videos)
 
 
 if __name__ == '__main__':
