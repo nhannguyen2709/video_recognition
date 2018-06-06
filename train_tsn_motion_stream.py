@@ -91,7 +91,7 @@ def train():
     with tf.device('/CPU:0'):
         if os.path.exists(args.filepath):
             model = load_model(args.filepath)
-        else:  # initialize the model if file path doesn't exist
+        else:
             model = TemporalSegmentNetworks_MotionStream(
                 input_shape=(299, 299, 20), dropout_prob=0.7,
                 classes=len(train_videos.labels))
