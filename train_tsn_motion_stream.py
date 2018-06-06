@@ -1,12 +1,11 @@
 import argparse
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
+import tensorflow as tf
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, ReduceLROnPlateau
 from keras.models import load_model
-from keras.optimizers import Adam, SGD
-
+from keras.optimizers import SGD
 
 from dataloader.keras_data import UCF101Flows
 from keras_models import MultiGPUModel, TemporalSegmentNetworks_MotionStream
@@ -39,7 +38,7 @@ parser.add_argument(
     help='learning rate initialized')
 parser.add_argument(
     '--num-workers',
-    default=4,
+    default=12,
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
@@ -61,7 +60,7 @@ def schedule(epoch, lr):
         return lr * 0.1
     elif epoch + 1 % 54 == 0:
         return lr * 0.1
-    else: 
+    else:
         return lr
 
 
@@ -77,7 +76,7 @@ def train():
         frames_path='data/UCF101/validation/frames',
         batch_size=args.batch_size,
         shuffle=False)
-    
+
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
     lr_scheduler = LearningRateScheduler(schedule=schedule)
@@ -89,17 +88,18 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr, lr_scheduler]
 
-    if os.path.exists(args.filepath):
-        model = load_model(args.filepath)
-    else: # initialize the model if file path doesn't exist
-        model = TemporalSegmentNetworks_MotionStream(
-            input_shape=(299, 299, 20), dropout_prob=0.7,
-            classes=len(train_videos.labels))
+    with tf.device('/CPU:0'):
+        if os.path.exists(args.filepath):
+            model = load_model(args.filepath)
+        else:  # initialize the model if file path doesn't exist
+            model = TemporalSegmentNetworks_MotionStream(
+                input_shape=(299, 299, 20), dropout_prob=0.7,
+                classes=len(train_videos.labels))
+
+    if args.gpu_mode == 'single':
         model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
                       loss='categorical_crossentropy',
                       metrics=['acc'])
-    
-    if args.gpu_mode=='single':
         model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
@@ -108,15 +108,19 @@ def train():
             validation_data=valid_videos)
     else:
         parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        parallel_model.compile(
+            optimizer=SGD(
+                lr=args.train_lr,
+                momentum=0.9),
+            loss='categorical_crossentropy',
+            metrics=['acc'])
         parallel_model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
             callbacks=callbacks,
             workers=args.num_workers,
             validation_data=valid_videos)
-    
+
 
 if __name__ == '__main__':
     train()
-    
