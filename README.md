@@ -73,6 +73,7 @@ On a single GTX 1070Ti, training the TSN's spatial stream on UCF101 data took ap
 ```
 python3 train_tsn_spatial_stream.py
 python3 train_tsn_motion_stream.py
+python3 train_on_my_videos.py
 python3 train_on_penn_action_dataset.py
 ```
 * Testing:
