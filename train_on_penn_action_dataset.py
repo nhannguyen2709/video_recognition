@@ -1,8 +1,7 @@
 import argparse
 import os
-
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
-
+import tensorflow as tf
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.models import load_model
@@ -57,7 +56,7 @@ parser.add_argument(
     help='number of GPUs on the device')
 parser.add_argument(
     '--gpu-mode',
-    default='single',
+    default='multi',
     type=str,
     help='gpu mode (single or multi)')
 
@@ -78,7 +77,7 @@ def train():
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
         shuffle=False)
-    
+
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
     save_best = ModelCheckpoint(
@@ -89,24 +88,26 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr]
 
-    if os.path.exists(args.filepath):
-        model = load_model(args.filepath)
-    else: # initialize the model if file path doesn't exist
-        model = VGG19_SpatialMotionTemporalGRU(
-            frames_input_shape=(
-                args.num_frames_sampled,
-                224,
-                224,
-                3),
-            poses_input_shape=(
-                args.num_frames_sampled,
-                26),
-            classes=len(train_videos.labels))
-        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
-                    loss='categorical_crossentropy',
-                    metrics=['acc'])
+    with tf.device('/CPU:0'):
+        if os.path.exists(args.filepath):
+            model = load_model(args.filepath)
+        else:  # initialize the model if file path doesn't exist
+            model = VGG19_SpatialMotionTemporalGRU(
+                frames_input_shape=(
+                    args.num_frames_sampled,
+                    224,
+                    224,
+                    3),
+                poses_input_shape=(
+                    args.num_frames_sampled,
+                    26),
+                classes=len(train_videos.labels))
 
-    if args.gpu_mode=='single':
+    print('Train the GRU component only')
+    if args.gpu_mode == 'single':
+        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
         model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
@@ -115,16 +116,20 @@ def train():
             validation_data=valid_videos)
     else:
         parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        parallel_model.compile(
+            optimizer=model.optimizer,
+            loss='categorical_crossentropy',
+            metrics=['acc'])
         parallel_model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
             callbacks=callbacks,
             workers=args.num_workers,
             validation_data=valid_videos)
-    
+        return K.get_value(parallel_model.optimizer.lr)
 
-def train_with_finetune():
+
+def train_with_finetune(prev_stage_lr):
     global args
     args = parser.parse_args()
 
@@ -139,7 +144,7 @@ def train_with_finetune():
         batch_size=args.batch_size,
         num_frames_sampled=args.num_frames_sampled,
         shuffle=False)
-    
+
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
                                   patience=5, verbose=1)
     save_best = ModelCheckpoint(
@@ -150,14 +155,16 @@ def train_with_finetune():
         mode='max')
     callbacks = [save_best, reduce_lr]
 
-    model = load_model(args.filepath)
+    with tf.device('/CPU:0'):
+        model = load_model(args.filepath)
     model.layers[-9].trainable = True
     model.layers[-10].trainable = True
-    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
 
-    if args.gpu_mode=='single':
+    print('Fine-tune top 2 convolutional layers of VGG19')
+    if args.gpu_mode == 'single':
+        model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
         model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
@@ -166,7 +173,10 @@ def train_with_finetune():
             validation_data=valid_videos)
     else:
         parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(optimizer=model.optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        parallel_model.compile(
+            optimizer=Adam(lr=prev_stage_lr * 0.5, decay=1e-5),
+            loss='categorical_crossentropy',
+            metrics=['acc'])
         parallel_model.fit_generator(
             generator=train_videos,
             epochs=args.epochs,
@@ -176,8 +186,6 @@ def train_with_finetune():
 
 
 if __name__ == '__main__':
-    print('Train the GRU component only')
-    train()
+    prev_stage_lr = train()
     K.clear_session()
-    print('Fine-tune top 2 convolutional layers of VGG19')
-    train_with_finetune()
+    train_with_finetune(prev_stage_lr)
