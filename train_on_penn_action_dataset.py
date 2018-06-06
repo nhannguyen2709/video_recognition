@@ -44,7 +44,7 @@ parser.add_argument(
     help='learning rate of train stage')
 parser.add_argument(
     '--num-workers',
-    default=4,
+    default=12,
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
