@@ -84,10 +84,9 @@ def train():
         model = TemporalSegmentNetworks_MotionStream(
             input_shape=(299, 299, 20), dropout_prob=0.7,
             classes=len(train_videos.labels))
-
-    model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
-                  loss='categorical_crossentropy',
-                  metrics=['acc'])
+        model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
+                      loss='categorical_crossentropy',
+                      metrics=['acc'])
     model.fit_generator(
         generator=train_videos,
         epochs=args.epochs,
