@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -21,7 +22,7 @@ parser.add_argument(
     help="path to checkpoint best model's state and weights")
 parser.add_argument(
     '--epochs',
-    default=60,
+    default=80,
     type=int,
     metavar='N',
     help='number of total epochs')
@@ -45,13 +46,13 @@ parser.add_argument(
     help='maximum number of processes to spin up')
 
 
-def schedule(epoch, lr):
-    if epoch + 1 % 36 == 0:
-        return lr * 0.1
-    elif epoch + 1 % 54 == 0:
-        return lr * 0.1
-    else:
-        return lr
+# def schedule(epoch, lr):
+#     if epoch + 1 % 36 == 0:
+#         return lr * 0.1
+#     elif epoch + 1 % 54 == 0:
+#         return lr * 0.1
+#     else:
+#         return lr
 
 
 def train():
@@ -67,21 +68,23 @@ def train():
         batch_size=args.batch_size,
         shuffle=False)
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
-                                  patience=5, verbose=1)
-    lr_scheduler = LearningRateScheduler(schedule=schedule)
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
+                                  min_lr=1e-6,
+                                  patience=2, verbose=1)
+    # lr_scheduler = LearningRateScheduler(schedule=schedule)
     save_best = ModelCheckpoint(
         args.filepath,
         monitor='val_acc',
         verbose=1,
         save_best_only=True,
         mode='max')
-    callbacks = [save_best, reduce_lr, lr_scheduler]
+    callbacks = [save_best, reduce_lr]
 
     if os.path.exists(args.filepath):
         model = load_model(args.filepath)
     else:
         model = TemporalSegmentNetworks_MotionStream(
+            weights='imagenet',
             input_shape=(299, 299, 20), dropout_prob=0.7,
             classes=len(train_videos.labels))
         model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),

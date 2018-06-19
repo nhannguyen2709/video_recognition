@@ -862,18 +862,18 @@ def TemporalSegmentNetworks_MotionStream(
         xception = load_model('checkpoint/ucf101_spatial_stream.hdf5')
         for old_layer, new_layer in zip(xception.layers[4:], model.layers[2:]):
             new_layer.set_weights(old_layer.get_weights())
-        weights = xception.layers[3].get_weights()[0]
+        first_conv_weights = xception.layers[3].get_weights()[0]
 
     # cross-modality pre-training
-    weights = np.average(weights, axis=2)
-    weights = np.reshape(
-        weights,
-        (weights.shape[0],
-         weights.shape[1],
+    first_conv_weights = np.average(first_conv_weights, axis=2)
+    first_conv_weights = np.reshape(
+        first_conv_weights,
+        (first_conv_weights.shape[0],
+         first_conv_weights.shape[1],
          1,
-         weights.shape[2]))
-    weights = np.dstack([weights] * input_shape[2])
-    model.layers[1].set_weights([weights])
+         first_conv_weights.shape[2]))
+    first_conv_weights = np.dstack([first_conv_weights] * input_shape[2])
+    model.layers[1].set_weights([first_conv_weights])
     # partial batch-normalization
     if partial_bn:
         num_bn_layers = 0

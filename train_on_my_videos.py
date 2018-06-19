@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
@@ -26,13 +27,13 @@ parser.add_argument(
     help="path to pretrained model weights")
 parser.add_argument(
     '--epochs',
-    default=50,
+    default=20,
     type=int,
     metavar='N',
     help='number of total epochs')
 parser.add_argument(
     '--batch-size',
-    default=4,
+    default=8,
     type=int,
     metavar='N',
     help='number of videos in a single mini-batch')
@@ -84,7 +85,7 @@ def train():
         num_frames_sampled=args.num_frames_sampled,
         shuffle=False)
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1), min_lr=1e-6,
                                   patience=5, verbose=1)
     save_best = ModelCheckpoint(
         args.filepath,
@@ -110,7 +111,7 @@ def train():
             classes=len(train_videos.labels))
         for i, layer in enumerate(model.layers[:-3]):
             layer.set_weights(pretrained_model.layers[i].get_weights())
-        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-5),
+        model.compile(optimizer=Adam(lr=args.train_lr, decay=1e-6),
                       loss='categorical_crossentropy',
                       metrics=['acc'])
         # hacky trick to avoid exhausting GPU's memory
@@ -169,7 +170,7 @@ def train_with_finetune():
     model = load_model(args.filepath)
     model.layers[-9].trainable = True
     model.layers[-10].trainable = True
-    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-5),
+    model.compile(optimizer=Adam(lr=K.get_value(model.optimizer.lr) * 0.5, decay=1e-6),
                   loss='categorical_crossentropy',
                   metrics=['acc'])
 
@@ -196,6 +197,6 @@ def train_with_finetune():
 
 
 if __name__ == '__main__':
-    train()
-    K.clear_session()
+#    train()
+#    K.clear_session()
     train_with_finetune()

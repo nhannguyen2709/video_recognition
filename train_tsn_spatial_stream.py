@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -65,7 +66,7 @@ def train():
         batch_size=args.batch_size,
         shuffle=False)
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.2,
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1), min_lr=1e-6,
                                   patience=2, verbose=1)
     lr_scheduler = LearningRateScheduler(schedule=schedule)
     save_best = ModelCheckpoint(
