@@ -116,4 +116,4 @@ def split_penn_action_dataset():
 
 
 if __name__ == '__main__':
-    split_ucf101_dataset()
+    split_my_videos_dataset()

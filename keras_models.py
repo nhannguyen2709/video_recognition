@@ -856,7 +856,7 @@ def TemporalSegmentNetworks_MotionStream(
         xception = Xception(include_top=False, pooling='avg')
         for old_layer, new_layer in zip(xception.layers[2:], model.layers[2:]):
             new_layer.set_weights(old_layer.get_weights())
-        weights = xception.layers[1].get_weights()[0]
+        first_conv_weights = xception.layers[1].get_weights()[0]
 
     elif weights == 'spatial_stream':
         xception = load_model('checkpoint/ucf101_spatial_stream.hdf5')
