@@ -1,5 +1,5 @@
 # Video recognition
-This repository aims to replicate the main results from several seminal papers in the field of action recognition on videos as well as try out new architectures using Keras, Numpy and OpenCV. All models can be found in the `keras_models.py` file.
+This repository aims to replicate the main results from several papers in the field of action recognition on videos as well as try out new architectures using Keras, Numpy and OpenCV. All models can be found in the `keras_models.py` file.
 ## Reference papers
 > 
 **Two-Stream Convolutional Networks for Action Recognition in Videos**,
