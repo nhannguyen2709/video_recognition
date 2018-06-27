@@ -47,8 +47,6 @@ parser.add_argument(
     help='maximum number of processes to spin up')
 
 
-
-
 def train():
     global args
     args = parser.parse_args()
