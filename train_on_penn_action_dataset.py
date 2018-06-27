@@ -20,7 +20,7 @@ parser.add_argument(
     help="path to checkpoint best model's state and weights")
 parser.add_argument(
     '--epochs',
-    default=20,
+    default=30,
     type=int,
     metavar='N',
     help='number of total epochs')
@@ -54,6 +54,11 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='number of GPUs on the device')
+parser.add_argument(
+    '--gpu-mode',
+    default='single',
+    type=str,
+    help='gpu mode (single or multi)')
 
 
 def train():
@@ -83,20 +88,19 @@ def train():
         mode='max')
     callbacks = [save_best, reduce_lr]
 
-    with tf.device('/CPU:0'):
-        if os.path.exists(args.filepath):
-            model = load_model(args.filepath)
-        else:
-            model = VGG19_SpatialMotionTemporalGRU(
-                frames_input_shape=(
-                    args.num_frames_sampled,
-                    224,
-                    224,
-                    3),
-                poses_input_shape=(
-                    args.num_frames_sampled,
-                    26),
-                classes=len(train_videos.labels))
+    if os.path.exists(args.filepath):
+        model = load_model(args.filepath)
+    else:
+        model = VGG19_SpatialMotionTemporalGRU(
+            frames_input_shape=(
+                args.num_frames_sampled,
+                224,
+                224,
+                3),
+            poses_input_shape=(
+                args.num_frames_sampled,
+                26),
+            classes=len(train_videos.labels))
 
     print('Train the GRU component only')
     parallel_model = MultiGPUModel(model, gpus=args.num_gpus)

@@ -10,7 +10,7 @@ from keras.models import load_model
 from keras.optimizers import SGD
 
 from dataloader.keras_data import UCF101Frames
-from keras_models import MultiGPUModel, TemporalSegmentNetworks_SpatialStream
+from keras_models import TemporalSegmentNetworks_SpatialStream
 
 parser = argparse.ArgumentParser(
     description='Training the Temporal Segment Networks on UCF101 data')
@@ -47,7 +47,7 @@ parser.add_argument(
 
 
 def schedule(epoch, lr):
-    if epoch + 1 % 10 == 0:
+    if epoch + 1 % 8 == 0:
         return lr * 0.1
     else:
         return lr

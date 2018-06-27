@@ -8,9 +8,10 @@ from keras.backend import tensorflow_backend as K
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, ReduceLROnPlateau
 from keras.models import load_model
 from keras.optimizers import SGD
+from keras.utils import multi_gpu_model
 
 from dataloader.keras_data import UCF101Flows
-from keras_models import MultiGPUModel, TemporalSegmentNetworks_MotionStream
+from keras_models import TemporalSegmentNetworks_MotionStream
 
 parser = argparse.ArgumentParser(
     description='Training the Temporal Segment Networks on UCF101 data')
@@ -46,15 +47,6 @@ parser.add_argument(
     help='maximum number of processes to spin up')
 
 
-# def schedule(epoch, lr):
-#     if epoch + 1 % 36 == 0:
-#         return lr * 0.1
-#     elif epoch + 1 % 54 == 0:
-#         return lr * 0.1
-#     else:
-#         return lr
-
-
 def train():
     global args
     args = parser.parse_args()
@@ -71,7 +63,6 @@ def train():
     reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
                                   min_lr=1e-6,
                                   patience=2, verbose=1)
-    # lr_scheduler = LearningRateScheduler(schedule=schedule)
     save_best = ModelCheckpoint(
         args.filepath,
         monitor='val_acc',
@@ -82,14 +73,14 @@ def train():
 
     if os.path.exists(args.filepath):
         model = load_model(args.filepath)
-    else:
+    else:        
         model = TemporalSegmentNetworks_MotionStream(
-            weights='imagenet',
             input_shape=(299, 299, 20), dropout_prob=0.7,
             classes=len(train_videos.labels))
-        model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
-                      loss='categorical_crossentropy',
-                      metrics=['acc'])
+    
+    model.compile(optimizer=SGD(lr=args.train_lr, momentum=0.9),
+                  loss='categorical_crossentropy',
+                  metrics=['acc'])
     model.fit_generator(
         generator=train_videos,
         epochs=args.epochs,

@@ -55,17 +55,6 @@ parser.add_argument(
     type=int,
     metavar='N',
     help='maximum number of processes to spin up')
-parser.add_argument(
-    '--num-gpus',
-    default=2,
-    type=int,
-    metavar='N',
-    help='number of GPUs on the device')
-parser.add_argument(
-    '--gpu-mode',
-    default='single',
-    type=str,
-    help='gpu mode (single or multi)')
 
 
 def train():
@@ -120,25 +109,12 @@ def train():
         model = load_model(args.filepath)
 
     print('Train the GRU component only')
-    if args.gpu_mode == 'single':
-        model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
-    else:
-        parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(
-            optimizer=model.optimizer,
-            loss='categorical_crossentropy',
-            metrics=['acc'])
-        parallel_model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
+    model.fit_generator(
+        generator=train_videos,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        workers=args.num_workers,
+        validation_data=valid_videos)
 
 
 def train_with_finetune():
@@ -175,28 +151,15 @@ def train_with_finetune():
                   metrics=['acc'])
 
     print('Fine-tune top 2 convolutional layers of VGG19')
-    if args.gpu_mode == 'single':
-        model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
-    else:
-        parallel_model = MultiGPUModel(model, gpus=args.num_gpus)
-        parallel_model.compile(
-            optimizer=model.optimizer,
-            loss='categorical_crossentropy',
-            metrics=['acc'])
-        parallel_model.fit_generator(
-            generator=train_videos,
-            epochs=args.epochs,
-            callbacks=callbacks,
-            workers=args.num_workers,
-            validation_data=valid_videos)
+    model.fit_generator(
+        generator=train_videos,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        workers=args.num_workers,
+        validation_data=valid_videos)
 
 
 if __name__ == '__main__':
-#    train()
-#    K.clear_session()
-    train_with_finetune()
+    train()
+    K.clear_session()
+    # train_with_finetune()
