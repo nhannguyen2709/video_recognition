@@ -7,7 +7,8 @@ import pickle
 import random
 from scipy import io
 
-from cv2 import resize, imread
+import cv2
+from cv2 import resize, imread, cvtColor
 from sklearn.utils import shuffle
 from keras.utils import Sequence, to_categorical
 
@@ -82,7 +83,7 @@ class UCF101Frames(Sequence):
 
 
 class UCF101Flows(Sequence):
-    def __init__(self, frames_path, batch_size, color_channel_weights=[0.114, 0.587, 0.299],
+    def __init__(self, frames_path, batch_size,
                  num_frames_taken=10, shuffle=True):
         self.frames_path = frames_path
         self.get_video_frames_paths_and_labels()
@@ -90,7 +91,6 @@ class UCF101Flows(Sequence):
             len(self.x), len(self.labels)))
         self.batch_size = batch_size
         self.num_classes = len(self.labels)
-        self.color_channel_weights = color_channel_weights # OpenCV uses BGR color order
         self.num_frames_taken = num_frames_taken
         self.shuffle = shuffle
         self.on_train_begin()
@@ -145,21 +145,19 @@ class UCF101Flows(Sequence):
         batch_x_v = self.x_v[idx * self.batch_size:(idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size:(idx + 1) * self.batch_size]
 
-        # flow input shape is (batch_size, 299, 299, 2L) where L is
-        # num_frames_taken
+        # flow input shape is (batch_size, 299, 299, 2L) where L is num_frames_taken
         batch_flows = np.zeros(
             (len(batch_x_u), 299, 299, 2 * self.num_frames_taken))
 
         for i, u_path in enumerate(batch_x_u):
             v_path = batch_x_v[i]
             sampled_flow_frames = self.sample_and_stack_flows(u_path, v_path)
-            batch_flows[i] = np.stack([np.average(resize(imread(frame), (299, 299)), 
-						  axis=-1, 
-						  weights=self.color_channel_weights) 
-				      for frame in sampled_flow_frames], 
-				      axis=-1)  
-
-        batch_flows /= 255.
+            batch_flows[i] = np.stack([np.average(cvtColor(resize(imread(frame), (299, 299)),
+                                                  cv2.COLOR_BGR2HSV),
+                                                  axis=-1)
+                                       for frame in sampled_flow_frames],
+                                       axis=-1)
+        batch_flows /= 128.
 
         return batch_flows, to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
@@ -355,49 +353,3 @@ class PennAction(Sequence):
 
         return [batch_video_frames, batch_video_poses], to_categorical(
             np.array(batch_y), num_classes=self.num_classes)
-
-
-if __name__ == '__main__':
-    import time
-
-    # my_videos = MyVideos(frames_path='../data/MyVideos/frames',
-    #                      poses_path='../data/MyVideos/poses',
-    #                      batch_size=4, num_frames_sampled=16,
-    #                      shuffle=False)
-    # print(my_videos.labels)
-    # for i in range(len(my_videos)):
-    #     start = time.time()
-    #     x, y = my_videos.__getitem__(i)
-    #     print(x[0].shape, x[1].shape, y.shape)
-    #     end = time.time()
-    #     print('Time taken to load a batch of {} videos: {}'.format(y.shape[0], end - start))
-
-    # ucf101_frames = UCF101Frames(
-    #     frames_path='../data/UCF101/train/frames',
-    #     batch_size=8,
-    #     shuffle=False)
-    # print(ucf101_frames.labels)
-    # for i in range(len(ucf101_frames)):
-    #     start = time.time()
-    #     x, y = ucf101_frames.__getitem__(i)
-    #     print(x[0].shape, x[1].shape, x[2].shape, y.shape)
-    #     end = time.time()
-    #     print(
-    #         'Time taken to load a batch of {} videos: {}'.format(
-    #             y.shape[0],
-    #             end - start))
-
-    ucf101_flows = UCF101Flows(
-        frames_path='../data/UCF101/train/frames',
-        batch_size=8,
-        shuffle=False)
-    print(ucf101_flows.labels)
-    for i in range(len(ucf101_flows)):
-        start = time.time()
-        x, y = ucf101_flows.__getitem__(i)
-        print(x.shape, y.shape)
-        end = time.time()
-        print(
-            'Time taken to load a batch of {} videos: {}'.format(
-                y.shape[0],
-                end - start))
