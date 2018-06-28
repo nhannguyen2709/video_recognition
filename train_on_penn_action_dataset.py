@@ -8,7 +8,7 @@ from keras.models import load_model
 from keras.optimizers import Adam
 
 from dataloader.keras_data import PennAction
-from keras_models import VGG19_SpatialMotionTemporalGRU, MultiGPUModel
+from keras_models import VGG19_GRU, MultiGPUModel
 
 parser = argparse.ArgumentParser(
     description='Training the spatial motion temporal network')
@@ -91,7 +91,7 @@ def train():
     if os.path.exists(args.filepath):
         model = load_model(args.filepath)
     else:
-        model = VGG19_SpatialMotionTemporalGRU(
+        model = VGG19_GRU(
             frames_input_shape=(
                 args.num_frames_sampled,
                 224,
