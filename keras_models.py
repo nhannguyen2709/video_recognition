@@ -2,9 +2,10 @@ import numpy as np
 
 from keras.applications.vgg19 import VGG19
 from keras.applications.xception import Xception
+from keras.backend import tensorflow_backend as K
 from keras.layers import BatchNormalization, Dense, Flatten, Input
-from keras.layers import Conv2D, ConvLSTM2D, GlobalAveragePooling2D, GlobalMaxPooling2D, MaxPooling2D, SeparableConv2D
-from keras.layers import Bidirectional, GRU, TimeDistributed
+from keras.layers import Conv2D, ConvLSTM2D, GRU, GlobalAveragePooling2D, GlobalMaxPooling2D, MaxPooling2D, SeparableConv2D
+from keras.layers import Bidirectional, Lambda, TimeDistributed
 from keras.layers import Activation, Add, Average, Dropout, Multiply
 from keras.models import Model, load_model
 from keras.utils import multi_gpu_model
@@ -27,7 +28,7 @@ class MultiGPUModel(Model):
         return super(MultiGPUModel, self).__getattribute__(attrname)
 
 
-def VGG19_Attention_LSTM(
+def VGG19_AttentionLSTM(
         frames_input_shape,
         classes):
     frames = Input(shape=frames_input_shape, name='frames')
@@ -75,11 +76,13 @@ def VGG19_Attention_LSTM(
     return model
 
 
-def VGG19_SpatialMotionTemporalGRU(
+def VGG19_GRU(
         frames_input_shape,
         poses_input_shape,
         classes):
     frames = Input(shape=frames_input_shape, name='frames')
+    poses = Input(poses_input_shape, name='poses')
+
     frames_features = TimeDistributed(
         Conv2D(
             64,
@@ -217,32 +220,34 @@ def VGG19_SpatialMotionTemporalGRU(
             padding='same',
             name='block5_conv4'))(frames_features)
     frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)
+    frames_features = Bidirectional(GRU(512, return_sequences=True, 
+                                        recurrent_dropout=0.2, dropout=0.2))(frames_features)
+    frames_features = Bidirectional(GRU(512, return_sequences=True, 
+                                        recurrent_dropout=0.2, dropout=0.2))(frames_features)
+    frames_outputs = TimeDistributed(Dense(classes, activation='softmax',
+                                           name='per_frame_pred_1'))(frames_features)
+    frames_outputs = Lambda(lambda x: K.mean(x, axis=1))(frames_outputs)
 
-    pose_gru = GRU(512, return_sequences=True, recurrent_dropout=0.2,
-                   dropout=0.2, name='pose_gru')
-    gru1 = GRU(512, return_sequences=True, recurrent_dropout=0.2,
-               dropout=0.2, name='gru1')
-    gru2 = GRU(512, recurrent_dropout=0.2, name='gru2')
-
-    frames_features = gru1(frames_features)
-    frames_features = gru2(frames_features)
-    frames_outputs = Dense(classes, activation='softmax',
-                           name='frames_predictions')(frames_features)
-
-    poses = Input(poses_input_shape, name='poses')
-    poses_features = pose_gru(poses)
-    poses_features = gru1(poses_features)
-    poses_features = gru2(poses_features)
-    poses_outputs = Dense(classes, activation='softmax',
-                          name='poses_predictions')(poses_features)
+    poses_features = Bidirectional(GRU(128, return_sequences=True, 
+                                       recurrent_dropout=0.2, dropout=0.2))(poses)
+    poses_features = Bidirectional(GRU(128, return_sequences=True, 
+                                       recurrent_dropout=0.2, dropout=0.2))(poses_features)
+    poses_outputs = TimeDistributed(Dense(classes, activation='softmax',
+                                          name='per_frame_pred_2'))(poses_features)
+    poses_outputs = Lambda(lambda x: K.mean(x, axis=1))(poses_outputs)
 
     outputs = Average(name='avg_fusion')([frames_outputs, poses_outputs])
     model = Model(inputs=[frames, poses], outputs=outputs)
+    # Overload model's weights with the pre-trained ImageNet weights of VGG19
+    vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
+    for i, layer in enumerate(vgg19.layers[:-1]):
+        model.layers[i].set_weights(weights=layer.get_weights())
+        model.layers[i].trainable = False
 
     return model
 
 
-def TemporalSegmentNetworks_SpatialStream(
+def TSNs_SpatialStream(
         input_shape, dropout_prob, classes, partial_bn=True):
     img_input_1 = Input(shape=input_shape)
     img_input_2 = Input(shape=input_shape)
@@ -571,7 +576,7 @@ def TemporalSegmentNetworks_SpatialStream(
     return model
 
 
-def TemporalSegmentNetworks_MotionStream(
+def TSNs_MotionStream(
         input_shape, dropout_prob, classes, weights='spatial_stream', partial_bn=True):
     flow_input = Input(shape=input_shape)
 
