@@ -7,10 +7,15 @@ Karen Simonyan, Andrew Zisserman,
 *NIPS 2014*.
 [[Arxiv Preprint](https://arxiv.org/pdf/1406.2199.pdf)]
 > 
+**Long-term Recurrent Convolutional Networks for Visual Recognition and Description**,
+Jeff Donahue, Lisa Anne Hendricks, Marcus Rohrbach, Subhashini Venugopalan, Sergio Guadarrama, Kate Saenko, Trevor Darrell,
+*CVPR 2015*.
+[[Arxiv Preprint](https://arxiv.org/pdf/1411.4389.pdf)]
+> 
 **Temporal Segment Networks: Towards Good Practices for Deep Action Recognition**,
-Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang, and Luc Van Gool,
+Limin Wang, Yuanjun Xiong, Zhe Wang, Yu Qiao, Dahua Lin, Xiaoou Tang, Luc Van Gool,
 *ECCV 2016*.
-[[Arxiv Preprint](http://arxiv.org/abs/1608.00859)]
+[[Arxiv Preprint](https://arxiv.org/pdf/1705.02953.pdf)]
 > 
 **Two-Stream RNN/CNN for Action Recognition in 3D Videos**,
 Rui Zhao, Haider Ali, Patrick van der Smagt,
@@ -59,7 +64,9 @@ Zhenyang Li, Efstratios Gavves, Mihir Jain, Cees G. M. Snoek,
 
 | Accuracy (%)                      | RGB   | Flow  | RGB+Flow |
 |-----------------------------------|-------|-------|----------|
-| Xception (no data augmentation)   | 83.66 |       |          |
+| Xception (avg consensus, no TTA)  | 84.51 |       |          |
+| Xception (attention, no TTA)      | 83.64 |       |          |
+| Xception (max consensus, no TTA)  | 82.95 |       |          |
 
   ### Penn Action
 | Accuracy (%)                      | RGB+Poses|
