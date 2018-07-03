@@ -1,12 +1,13 @@
+from inspect import getmembers, isfunction
+import keras
 import numpy as np
 
 from keras.applications.vgg19 import VGG19
-from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.layers import BatchNormalization, Dense, Flatten, Input
 from keras.layers import Conv2D, ConvLSTM2D, GRU, GlobalAveragePooling2D, GlobalMaxPooling2D, MaxPooling2D, SeparableConv2D
 from keras.layers import Bidirectional, Lambda, TimeDistributed
-from keras.layers import Activation, Add, Average, Dropout, Multiply
+from keras.layers import Activation, Add, Average, Concatenate, Dropout, Maximum, Multiply, Permute, Reshape
 from keras.models import Model, load_model
 from keras.utils import multi_gpu_model
 
@@ -220,23 +221,24 @@ def VGG19_GRU(
             padding='same',
             name='block5_conv4'))(frames_features)
     frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)
-    frames_features = Bidirectional(GRU(512, return_sequences=True, 
-                                        recurrent_dropout=0.2, dropout=0.2))(frames_features)
-    frames_features = Bidirectional(GRU(512, return_sequences=True, 
-                                        recurrent_dropout=0.2, dropout=0.2))(frames_features)
-    frames_outputs = TimeDistributed(Dense(classes, activation='softmax',
-                                           name='per_frame_pred_1'))(frames_features)
-    frames_outputs = Lambda(lambda x: K.mean(x, axis=1))(frames_outputs)
+    
+    pose_gru = GRU(512, return_sequences=True, 
+                   recurrent_dropout=0.2, dropout=0.2)
+    gru_1 = GRU(512, return_sequences=True, 
+                recurrent_dropout=0.2, dropout=0.2)
+    gru_2 = GRU(512, recurrent_dropout=0.2)    
+    
+    frames_features = gru_1(frames_features)
+    frames_features = gru_2(frames_features)
+    frames_outputs = Dense(classes, activation='softmax', name='frame_pred')(frames_features)
 
-    poses_features = Bidirectional(GRU(128, return_sequences=True, 
-                                       recurrent_dropout=0.2, dropout=0.2))(poses)
-    poses_features = Bidirectional(GRU(128, return_sequences=True, 
-                                       recurrent_dropout=0.2, dropout=0.2))(poses_features)
-    poses_outputs = TimeDistributed(Dense(classes, activation='softmax',
-                                          name='per_frame_pred_2'))(poses_features)
-    poses_outputs = Lambda(lambda x: K.mean(x, axis=1))(poses_outputs)
+    poses_features = pose_gru(poses)
+    poses_features = gru_1(poses_features)
+    poses_features = gru_2(poses_features)
+    poses_outputs = Dense(classes, activation='softmax', name='pose_pred')(poses_features)
 
     outputs = Average(name='avg_fusion')([frames_outputs, poses_outputs])
+    
     model = Model(inputs=[frames, poses], outputs=outputs)
     # Overload model's weights with the pre-trained ImageNet weights of VGG19
     vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
@@ -248,331 +250,51 @@ def VGG19_GRU(
 
 
 def TSNs_SpatialStream(
-        input_shape, dropout_prob, classes, partial_bn=True):
-    img_input_1 = Input(shape=input_shape)
-    img_input_2 = Input(shape=input_shape)
-    img_input_3 = Input(shape=input_shape)
-
-    block1_conv1 = Conv2D(32, (3, 3), strides=(
-        2, 2), use_bias=False, name='block1_conv1')
-    block1_conv1_bn = BatchNormalization(name='block1_conv1_bn')
-    block1_conv1_act = Activation('relu', name='block1_conv1_act')
-    block1_conv2 = Conv2D(64, (3, 3), use_bias=False, name='block1_conv2')
-    block1_conv2_bn = BatchNormalization(name='block1_conv2_bn')
-    block1_conv2_act = Activation('relu', name='block1_conv2_act')
-    res_conv1 = Conv2D(128, (1, 1), strides=(2, 2),
-                       padding='same', use_bias=False, name='res_conv1')
-    res_conv1_bn = BatchNormalization(name='res_conv1_bn')
-    x_1 = block1_conv1(img_input_1)
-    x_1 = block1_conv1_bn(x_1)
-    x_1 = block1_conv1_act(x_1)
-    x_1 = block1_conv2(x_1)
-    x_1 = block1_conv2_bn(x_1)
-    x_1 = block1_conv2_act(x_1)
-    res_1 = res_conv1(x_1)
-    res_1 = res_conv1_bn(res_1)
-    x_2 = block1_conv1(img_input_2)
-    x_2 = block1_conv1_bn(x_2)
-    x_2 = block1_conv1_act(x_2)
-    x_2 = block1_conv2(x_2)
-    x_2 = block1_conv2_bn(x_2)
-    x_2 = block1_conv2_act(x_2)
-    res_2 = res_conv1(x_2)
-    res_2 = res_conv1_bn(res_2)
-    x_3 = block1_conv1(img_input_3)
-    x_3 = block1_conv1_bn(x_3)
-    x_3 = block1_conv1_act(x_3)
-    x_3 = block1_conv2(x_3)
-    x_3 = block1_conv2_bn(x_3)
-    x_3 = block1_conv2_act(x_3)
-    res_3 = res_conv1(x_3)
-    res_3 = res_conv1_bn(res_3)
-
-    block2_sepconv1 = SeparableConv2D(
-        128, (3, 3), padding='same', use_bias=False, name='block2_sepconv1')
-    block2_sepconv1_bn = BatchNormalization(name='block2_sepconv1_bn')
-    block2_sepconv2_act = Activation('relu', name='block2_sepconv2_act')
-    block2_sepconv2 = SeparableConv2D(
-        128, (3, 3), padding='same', use_bias=False, name='block2_sepconv2')
-    block2_sepconv2_bn = BatchNormalization(name='block2_sepconv2_bn')
-    block2_pool = MaxPooling2D((3, 3), strides=(
-        2, 2), padding='same', name='block2_pool')
-    x_res_add1 = Add(name='x_res_add1')
-    x_1 = block2_sepconv1(x_1)
-    x_1 = block2_sepconv1_bn(x_1)
-    x_1 = block2_sepconv2_act(x_1)
-    x_1 = block2_sepconv2(x_1)
-    x_1 = block2_sepconv2_bn(x_1)
-    x_1 = block2_pool(x_1)
-    x_1 = x_res_add1([x_1, res_1])
-    x_2 = block2_sepconv1(x_2)
-    x_2 = block2_sepconv1_bn(x_2)
-    x_2 = block2_sepconv2_act(x_2)
-    x_2 = block2_sepconv2(x_2)
-    x_2 = block2_sepconv2_bn(x_2)
-    x_2 = block2_pool(x_2)
-    x_2 = x_res_add1([x_2, res_2])
-    x_3 = block2_sepconv1(x_3)
-    x_3 = block2_sepconv1_bn(x_3)
-    x_3 = block2_sepconv2_act(x_3)
-    x_3 = block2_sepconv2(x_3)
-    x_3 = block2_sepconv2_bn(x_3)
-    x_3 = block2_pool(x_3)
-    x_3 = x_res_add1([x_3, res_3])
-
-    res_conv2 = Conv2D(256, (1, 1), strides=(2, 2),
-                       padding='same', use_bias=False, name='res_conv2')
-    res_conv2_bn = BatchNormalization(name='res_conv2_bn')
-    res_1 = res_conv2(x_1)
-    res_1 = res_conv2_bn(res_1)
-    res_2 = res_conv2(x_2)
-    res_2 = res_conv2_bn(res_2)
-    res_3 = res_conv2(x_3)
-    res_3 = res_conv2_bn(res_3)
-
-    block3_sepconv1_act = Activation('relu', name='block3_sepconv1_act')
-    block3_sepconv1 = SeparableConv2D(
-        256, (3, 3), padding='same', use_bias=False, name='block3_sepconv1')
-    block3_sepconv1_bn = BatchNormalization(name='block3_sepconv1_bn')
-    block3_sepconv2_act = Activation('relu', name='block3_sepconv2_act')
-    block3_sepconv2 = SeparableConv2D(
-        256, (3, 3), padding='same', use_bias=False, name='block3_sepconv2')
-    block3_sepconv2_bn = BatchNormalization(name='block3_sepconv2_bn')
-    block3_pool = MaxPooling2D((3, 3), strides=(
-        2, 2), padding='same', name='block3_pool')
-    x_res_add2 = Add(name='x_res_add2')
-    x_1 = block3_sepconv1_act(x_1)
-    x_1 = block3_sepconv1(x_1)
-    x_1 = block3_sepconv1_bn(x_1)
-    x_1 = block3_sepconv2_act(x_1)
-    x_1 = block3_sepconv2(x_1)
-    x_1 = block3_sepconv2_bn(x_1)
-    x_1 = block3_pool(x_1)
-    x_1 = x_res_add2([x_1, res_1])
-    x_2 = block3_sepconv1_act(x_2)
-    x_2 = block3_sepconv1(x_2)
-    x_2 = block3_sepconv1_bn(x_2)
-    x_2 = block3_sepconv2_act(x_2)
-    x_2 = block3_sepconv2(x_2)
-    x_2 = block3_sepconv2_bn(x_2)
-    x_2 = block3_pool(x_2)
-    x_2 = x_res_add2([x_2, res_2])
-    x_3 = block3_sepconv1_act(x_3)
-    x_3 = block3_sepconv1(x_3)
-    x_3 = block3_sepconv1_bn(x_3)
-    x_3 = block3_sepconv2_act(x_3)
-    x_3 = block3_sepconv2(x_3)
-    x_3 = block3_sepconv2_bn(x_3)
-    x_3 = block3_pool(x_3)
-    x_3 = x_res_add2([x_3, res_3])
-
-    res_conv3 = Conv2D(728, (1, 1), strides=(2, 2),
-                       padding='same', use_bias=False, name='res_conv3')
-    res_conv3_bn = BatchNormalization(name='res_conv3_bn')
-    res_1 = res_conv3(x_1)
-    res_1 = res_conv3_bn(res_1)
-    res_2 = res_conv3(x_2)
-    res_2 = res_conv3_bn(res_2)
-    res_3 = res_conv3(x_3)
-    res_3 = res_conv3_bn(res_3)
-
-    block4_sepconv1_act = Activation('relu', name='block4_sepconv1_act')
-    block4_sepconv1 = SeparableConv2D(
-        728, (3, 3), padding='same', use_bias=False, name='block4_sepconv1')
-    block4_sepconv1_bn = BatchNormalization(name='block4_sepconv1_bn')
-    block4_sepconv2_act = Activation('relu', name='block4_sepconv2_act')
-    block4_sepconv2 = SeparableConv2D(
-        728, (3, 3), padding='same', use_bias=False, name='block4_sepconv2')
-    block4_sepconv2_bn = BatchNormalization(name='block4_sepconv2_bn')
-    block4_pool = MaxPooling2D((3, 3), strides=(
-        2, 2), padding='same', name='block4_pool')
-    x_res_add3 = Add(name='x_res_add3')
-    x_1 = block4_sepconv1_act(x_1)
-    x_1 = block4_sepconv1(x_1)
-    x_1 = block4_sepconv1_bn(x_1)
-    x_1 = block4_sepconv2_act(x_1)
-    x_1 = block4_sepconv2(x_1)
-    x_1 = block4_sepconv2_bn(x_1)
-    x_1 = block4_pool(x_1)
-    x_1 = x_res_add3([x_1, res_1])
-    x_2 = block4_sepconv1_act(x_2)
-    x_2 = block4_sepconv1(x_2)
-    x_2 = block4_sepconv1_bn(x_2)
-    x_2 = block4_sepconv2_act(x_2)
-    x_2 = block4_sepconv2(x_2)
-    x_2 = block4_sepconv2_bn(x_2)
-    x_2 = block4_pool(x_2)
-    x_2 = x_res_add3([x_2, res_2])
-    x_3 = block4_sepconv1_act(x_3)
-    x_3 = block4_sepconv1(x_3)
-    x_3 = block4_sepconv1_bn(x_3)
-    x_3 = block4_sepconv2_act(x_3)
-    x_3 = block4_sepconv2(x_3)
-    x_3 = block4_sepconv2_bn(x_3)
-    x_3 = block4_pool(x_3)
-    x_3 = x_res_add3([x_3, res_3])
-
-    for i in range(8):
-        res_1 = x_1
-        res_2 = x_2
-        res_3 = x_3
-        prefix = 'block' + str(i + 5)
-
-        shared_1 = Activation('relu', name=prefix + '_sepconv1_act')
-        x_1 = shared_1(x_1)
-        x_2 = shared_1(x_2)
-        x_3 = shared_1(x_3)
-
-        shared_2 = SeparableConv2D(
-            728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv1')
-        x_1 = shared_2(x_1)
-        x_2 = shared_2(x_2)
-        x_3 = shared_2(x_3)
-
-        shared_3 = BatchNormalization(name=prefix + '_sepconv1_bn')
-        x_1 = shared_3(x_1)
-        x_2 = shared_3(x_2)
-        x_3 = shared_3(x_3)
-
-        shared_4 = Activation('relu', name=prefix + '_sepconv2_act')
-        x_1 = shared_4(x_1)
-        x_2 = shared_4(x_2)
-        x_3 = shared_4(x_3)
-
-        shared_5 = SeparableConv2D(
-            728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv2')
-        x_1 = shared_5(x_1)
-        x_2 = shared_5(x_2)
-        x_3 = shared_5(x_3)
-
-        shared_6 = BatchNormalization(name=prefix + '_sepconv2_bn')
-        x_1 = shared_6(x_1)
-        x_2 = shared_6(x_2)
-        x_3 = shared_6(x_3)
-
-        shared_7 = Activation('relu', name=prefix + '_sepconv3_act')
-        x_1 = shared_7(x_1)
-        x_2 = shared_7(x_2)
-        x_3 = shared_7(x_3)
-
-        shared_8 = SeparableConv2D(
-            728, (3, 3), padding='same', use_bias=False, name=prefix + '_sepconv3')
-        x_1 = shared_8(x_1)
-        x_2 = shared_8(x_2)
-        x_3 = shared_8(x_3)
-
-        shared_9 = BatchNormalization(name=prefix + '_sepconv3_bn')
-        x_1 = shared_9(x_1)
-        x_2 = shared_9(x_2)
-        x_3 = shared_9(x_3)
-
-        shared_10 = Add(name='x_res_add' + str(i + 4))
-        x_1 = shared_10([x_1, res_1])
-        x_2 = shared_10([x_2, res_2])
-        x_3 = shared_10([x_3, res_3])
-
-    res_conv4 = Conv2D(1024, (1, 1), strides=(2, 2),
-                       padding='same', use_bias=False, name='res_conv4')
-    res_conv4_bn = BatchNormalization(name='res_conv4_bn')
-    res_1 = res_conv4(x_1)
-    res_1 = res_conv4_bn(res_1)
-    res_2 = res_conv4(x_2)
-    res_2 = res_conv4_bn(res_2)
-    res_3 = res_conv4(x_3)
-    res_3 = res_conv4_bn(res_3)
-
-    block13_sepconv1_act = Activation('relu', name='block13_sepconv1_act')
-    block13_sepconv1 = SeparableConv2D(
-        728, (3, 3), padding='same', use_bias=False, name='block13_sepconv1')
-    block13_sepconv1_bn = BatchNormalization(name='block13_sepconv1_bn')
-    block13_sepconv2_act = Activation('relu', name='block13_sepconv2_act')
-    block13_sepconv2 = SeparableConv2D(
-        1024, (3, 3), padding='same', use_bias=False, name='block13_sepconv2')
-    block13_sepconv2_bn = BatchNormalization(name='block13_sepconv2_bn')
-    block13_pool = MaxPooling2D((3, 3), strides=(
-        2, 2), padding='same', name='block13_pool')
-    x_res_add12 = Add(name='x_res_add12')
-    x_1 = block13_sepconv1_act(x_1)
-    x_1 = block13_sepconv1(x_1)
-    x_1 = block13_sepconv1_bn(x_1)
-    x_1 = block13_sepconv2_act(x_1)
-    x_1 = block13_sepconv2(x_1)
-    x_1 = block13_sepconv2_bn(x_1)
-    x_1 = block13_pool(x_1)
-    x_1 = x_res_add12([x_1, res_1])
-    x_2 = block13_sepconv1_act(x_2)
-    x_2 = block13_sepconv1(x_2)
-    x_2 = block13_sepconv1_bn(x_2)
-    x_2 = block13_sepconv2_act(x_2)
-    x_2 = block13_sepconv2(x_2)
-    x_2 = block13_sepconv2_bn(x_2)
-    x_2 = block13_pool(x_2)
-    x_2 = x_res_add12([x_2, res_2])
-    x_3 = block13_sepconv1_act(x_3)
-    x_3 = block13_sepconv1(x_3)
-    x_3 = block13_sepconv1_bn(x_3)
-    x_3 = block13_sepconv2_act(x_3)
-    x_3 = block13_sepconv2(x_3)
-    x_3 = block13_sepconv2_bn(x_3)
-    x_3 = block13_pool(x_3)
-    x_3 = x_res_add12([x_3, res_3])
-
-    block14_sepconv1 = SeparableConv2D(
-        1536, (3, 3), padding='same', use_bias=False, name='block14_sepconv1')
-    block14_sepconv1_bn = BatchNormalization(name='block14_sepconv1_bn')
-    block14_sepconv1_act = Activation('relu', name='block14_sepconv1_act')
-    block14_sepconv2 = SeparableConv2D(
-        2048, (3, 3), padding='same', use_bias=False, name='block14_sepconv2')
-    block14_sepconv2_bn = BatchNormalization(name='block14_sepconv2_bn')
-    block14_sepconv2_act = Activation('relu', name='block14_sepconv2_act')
-    x_1 = block14_sepconv1(x_1)
-    x_1 = block14_sepconv1_bn(x_1)
-    x_1 = block14_sepconv1_act(x_1)
-    x_1 = block14_sepconv2(x_1)
-    x_1 = block14_sepconv2_bn(x_1)
-    x_1 = block14_sepconv2_act(x_1)
-    x_2 = block14_sepconv1(x_2)
-    x_2 = block14_sepconv1_bn(x_2)
-    x_2 = block14_sepconv1_act(x_2)
-    x_2 = block14_sepconv2(x_2)
-    x_2 = block14_sepconv2_bn(x_2)
-    x_2 = block14_sepconv2_act(x_2)
-    x_3 = block14_sepconv1(x_3)
-    x_3 = block14_sepconv1_bn(x_3)
-    x_3 = block14_sepconv1_act(x_3)
-    x_3 = block14_sepconv2(x_3)
-    x_3 = block14_sepconv2_bn(x_3)
-    x_3 = block14_sepconv2_act(x_3)
-
-    global_avg_pool = GlobalAveragePooling2D(name='avg_pool')
-    dense_no_act = Dense(classes, activation=None, name='dense_no_act')
+    input_shape, classes, num_segments=3, base_model='Xception', dropout_prob=0.8, consensus_type='avg', partial_bn=True):
+    """
+    Spatial stream of the Temporal Segment Networks (https://arxiv.org/pdf/1705.02953.pdf) defined as multi-input Keras model.
+    """
+    # Define the shared layers, base conv net and enable partial batch normalization strategy
+    inputs = [Input(input_shape) for _ in range(num_segments)]
     dropout = Dropout(dropout_prob)
-    x_1 = global_avg_pool(x_1)
-    x_1 = dropout(x_1)
-    x_1 = dense_no_act(x_1)
-    x_2 = global_avg_pool(x_2)
-    x_2 = dropout(x_2)
-    x_2 = dense_no_act(x_2)
-    x_3 = global_avg_pool(x_3)
-    x_3 = dropout(x_3)
-    x_3 = dense_no_act(x_3)
-    class_scores = Average(name='agg_func')([x_1, x_2, x_3])
-    x = Activation(activation='softmax', name='predictions')(class_scores)
-
-    model = Model(inputs=[img_input_1, img_input_2, img_input_3], outputs=x)
-
-    xception = Xception(include_top=False, pooling='avg')
-    for i, layer in enumerate(xception.layers[1:]):
-        model.layers[i + 3].set_weights(layer.get_weights())
-
+    dense = Dense(classes, activation=None)
+    act = Activation(activation='softmax', name='prediction')
+    models_dict = dict(getmembers(keras.applications, isfunction))
+    base = models_dict[base_model](include_top=False, pooling='avg')
     if partial_bn:
         num_bn_layers = 0
-        for layer in model.layers:
+        for layer in base.layers:
             if isinstance(layer, BatchNormalization):
                 num_bn_layers += 1
                 if num_bn_layers != 1:
                     layer.trainable = False
+    # Pass multiple inputs (depending on num_segments) through the base conv net
+    outputs = []
+    visual_features = []
+    for seg_input in inputs:
+        seg_output = base(seg_input)
+        visual_features.append(seg_output)
+        seg_output = dropout(seg_output)
+        seg_output = dense(seg_output)
+        outputs.append(seg_output)
+    # Use a consensus function to combine class scores
+    if consensus_type == 'avg':
+        output = Average()(outputs)
+    elif consensus_type == 'max':
+        output = Maximum()(outputs)
+    elif consensus_type == 'attention':
+        weighted_outputs = []
+        attn_layer = Dense(1, use_bias=False, name='attn_layer')
+        attn_weights = [attn_layer(_) for _ in visual_features]
+        attn_weights = Lambda(lambda x: K.concatenate(x, axis=-1), name='concatenate')(attn_weights)
+        attn_weights = Activation('softmax')(attn_weights)
+        for i, seg_output in enumerate(outputs):
+            weight = Lambda(lambda x: x[:, i])(attn_weights)
+            weighted_outputs.append(Multiply()([weight, seg_output]))
+        output = Add()(weighted_outputs)         
 
+    output = act(output)
+    model = Model(inputs, output)
     return model
 
 
