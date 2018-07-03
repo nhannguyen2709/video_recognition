@@ -3,6 +3,7 @@ import keras
 import numpy as np
 
 from keras.applications.vgg19 import VGG19
+from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.layers import BatchNormalization, Dense, Flatten, Input
 from keras.layers import Conv2D, ConvLSTM2D, GRU, GlobalAveragePooling2D, GlobalMaxPooling2D, MaxPooling2D, SeparableConv2D
@@ -221,24 +222,30 @@ def VGG19_GRU(
             padding='same',
             name='block5_conv4'))(frames_features)
     frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)
-    
-    pose_gru = GRU(512, return_sequences=True, 
+
+    pose_gru = GRU(512, return_sequences=True,
                    recurrent_dropout=0.2, dropout=0.2)
-    gru_1 = GRU(512, return_sequences=True, 
+    gru_1 = GRU(512, return_sequences=True,
                 recurrent_dropout=0.2, dropout=0.2)
-    gru_2 = GRU(512, recurrent_dropout=0.2)    
-    
+    gru_2 = GRU(512, recurrent_dropout=0.2)
+
     frames_features = gru_1(frames_features)
     frames_features = gru_2(frames_features)
-    frames_outputs = Dense(classes, activation='softmax', name='frame_pred')(frames_features)
+    frames_outputs = Dense(
+        classes,
+        activation='softmax',
+        name='frame_pred')(frames_features)
 
     poses_features = pose_gru(poses)
     poses_features = gru_1(poses_features)
     poses_features = gru_2(poses_features)
-    poses_outputs = Dense(classes, activation='softmax', name='pose_pred')(poses_features)
+    poses_outputs = Dense(
+        classes,
+        activation='softmax',
+        name='pose_pred')(poses_features)
 
     outputs = Average(name='avg_fusion')([frames_outputs, poses_outputs])
-    
+
     model = Model(inputs=[frames, poses], outputs=outputs)
     # Overload model's weights with the pre-trained ImageNet weights of VGG19
     vgg19 = VGG19(include_top=False, input_shape=frames_input_shape[1:])
@@ -250,11 +257,12 @@ def VGG19_GRU(
 
 
 def TSNs_SpatialStream(
-    input_shape, classes, num_segments=3, base_model='Xception', dropout_prob=0.8, consensus_type='avg', partial_bn=True):
+        input_shape, classes, num_segments=3, base_model='Xception', dropout_prob=0.8, consensus_type='avg', partial_bn=True):
     """
     Spatial stream of the Temporal Segment Networks (https://arxiv.org/pdf/1705.02953.pdf) defined as multi-input Keras model.
     """
-    # Define the shared layers, base conv net and enable partial batch normalization strategy
+    # Define the shared layers, base conv net and enable partial batch
+    # normalization strategy
     inputs = [Input(input_shape) for _ in range(num_segments)]
     dropout = Dropout(dropout_prob)
     dense = Dense(classes, activation=None)
@@ -268,7 +276,8 @@ def TSNs_SpatialStream(
                 num_bn_layers += 1
                 if num_bn_layers != 1:
                     layer.trainable = False
-    # Pass multiple inputs (depending on num_segments) through the base conv net
+    # Pass multiple inputs (depending on num_segments) through the base conv
+    # net
     outputs = []
     visual_features = []
     for seg_input in inputs:
@@ -286,12 +295,13 @@ def TSNs_SpatialStream(
         weighted_outputs = []
         attn_layer = Dense(1, use_bias=False, name='attn_layer')
         attn_weights = [attn_layer(_) for _ in visual_features]
-        attn_weights = Lambda(lambda x: K.concatenate(x, axis=-1), name='concatenate')(attn_weights)
+        attn_weights = Lambda(lambda x: K.concatenate(
+            x, axis=-1), name='concatenate')(attn_weights)
         attn_weights = Activation('softmax')(attn_weights)
         for i, seg_output in enumerate(outputs):
             weight = Lambda(lambda x: x[:, i])(attn_weights)
             weighted_outputs.append(Multiply()([weight, seg_output]))
-        output = Add()(weighted_outputs)         
+        output = Add()(weighted_outputs)
 
     output = act(output)
     model = Model(inputs, output)
