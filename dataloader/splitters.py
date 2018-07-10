@@ -68,7 +68,7 @@ class MyVideos_splitter:
 
     def split_video(self):
         le = LabelEncoder()
-        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.1)
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2)
         videos = np.array(sorted(os.listdir(self.frames_path)))
         labels = le.fit_transform([video.split('_')[0] for video in videos])
         for train_idx, valid_idx in sss.split(videos, labels):

@@ -113,7 +113,3 @@ def split_penn_action_dataset():
 
         shutil.copy2(os.path.join(labels_path, test_video_mat),
                     os.path.join(test_labels_dst, test_video_mat))
-
-
-if __name__ == '__main__':
-    split_my_videos_dataset()
