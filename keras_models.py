@@ -1,9 +1,9 @@
+import flows_applications
 from inspect import getmembers, isfunction
 import keras
 import numpy as np
 
 from keras.applications.vgg19 import VGG19
-from keras.applications.xception import Xception
 from keras.backend import tensorflow_backend as K
 from keras.layers import BatchNormalization, Dense, Flatten, Input
 from keras.layers import Conv2D, ConvLSTM2D, GRU, GlobalAveragePooling2D, GlobalMaxPooling2D, MaxPooling2D, SeparableConv2D
@@ -309,150 +309,23 @@ def TSNs_SpatialStream(
 
 
 def TSNs_MotionStream(
-        input_shape, dropout_prob, classes, weights='spatial_stream', partial_bn=True):
-    flow_input = Input(shape=input_shape)
-
-    x = Conv2D(32, (3, 3), strides=(2, 2), use_bias=False,
-               name='block1_conv1')(flow_input)
-    x = BatchNormalization(name='block1_conv1_bn')(x)
-    x = Activation('relu', name='block1_conv1_act')(x)
-    x = Conv2D(64, (3, 3), use_bias=False, name='block1_conv2')(x)
-    x = BatchNormalization(name='block1_conv2_bn')(x)
-    x = Activation('relu', name='block1_conv2_act')(x)
-
-    residual = Conv2D(128, (1, 1), strides=(2, 2),
-                      padding='same', use_bias=False)(x)
-    residual = BatchNormalization()(residual)
-
-    x = SeparableConv2D(128, (3, 3), padding='same',
-                        use_bias=False, name='block2_sepconv1')(x)
-    x = BatchNormalization(name='block2_sepconv1_bn')(x)
-    x = Activation('relu', name='block2_sepconv2_act')(x)
-    x = SeparableConv2D(128, (3, 3), padding='same',
-                        use_bias=False, name='block2_sepconv2')(x)
-    x = BatchNormalization(name='block2_sepconv2_bn')(x)
-
-    x = MaxPooling2D(
-        (3, 3), strides=(
-            2, 2), padding='same', name='block2_pool')(x)
-    x = Add()([x, residual])
-
-    residual = Conv2D(256, (1, 1), strides=(2, 2),
-                      padding='same', use_bias=False)(x)
-    residual = BatchNormalization()(residual)
-
-    x = Activation('relu', name='block3_sepconv1_act')(x)
-    x = SeparableConv2D(256, (3, 3), padding='same',
-                        use_bias=False, name='block3_sepconv1')(x)
-    x = BatchNormalization(name='block3_sepconv1_bn')(x)
-    x = Activation('relu', name='block3_sepconv2_act')(x)
-    x = SeparableConv2D(256, (3, 3), padding='same',
-                        use_bias=False, name='block3_sepconv2')(x)
-    x = BatchNormalization(name='block3_sepconv2_bn')(x)
-
-    x = MaxPooling2D(
-        (3, 3), strides=(
-            2, 2), padding='same', name='block3_pool')(x)
-    x = Add()([x, residual])
-
-    residual = Conv2D(728, (1, 1), strides=(2, 2),
-                      padding='same', use_bias=False)(x)
-    residual = BatchNormalization()(residual)
-
-    x = Activation('relu', name='block4_sepconv1_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same',
-                        use_bias=False, name='block4_sepconv1')(x)
-    x = BatchNormalization(name='block4_sepconv1_bn')(x)
-    x = Activation('relu', name='block4_sepconv2_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same',
-                        use_bias=False, name='block4_sepconv2')(x)
-    x = BatchNormalization(name='block4_sepconv2_bn')(x)
-
-    x = MaxPooling2D(
-        (3, 3), strides=(
-            2, 2), padding='same', name='block4_pool')(x)
-    x = Add()([x, residual])
-
-    for i in range(8):
-        residual = x
-        prefix = 'block' + str(i + 5)
-
-        x = Activation('relu', name=prefix + '_sepconv1_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same',
-                            use_bias=False, name=prefix + '_sepconv1')(x)
-        x = BatchNormalization(name=prefix + '_sepconv1_bn')(x)
-        x = Activation('relu', name=prefix + '_sepconv2_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same',
-                            use_bias=False, name=prefix + '_sepconv2')(x)
-        x = BatchNormalization(name=prefix + '_sepconv2_bn')(x)
-        x = Activation('relu', name=prefix + '_sepconv3_act')(x)
-        x = SeparableConv2D(728, (3, 3), padding='same',
-                            use_bias=False, name=prefix + '_sepconv3')(x)
-        x = BatchNormalization(name=prefix + '_sepconv3_bn')(x)
-
-        x = Add()([x, residual])
-
-    residual = Conv2D(1024, (1, 1), strides=(2, 2),
-                      padding='same', use_bias=False)(x)
-    residual = BatchNormalization()(residual)
-
-    x = Activation('relu', name='block13_sepconv1_act')(x)
-    x = SeparableConv2D(728, (3, 3), padding='same',
-                        use_bias=False, name='block13_sepconv1')(x)
-    x = BatchNormalization(name='block13_sepconv1_bn')(x)
-    x = Activation('relu', name='block13_sepconv2_act')(x)
-    x = SeparableConv2D(1024, (3, 3), padding='same',
-                        use_bias=False, name='block13_sepconv2')(x)
-    x = BatchNormalization(name='block13_sepconv2_bn')(x)
-
-    x = MaxPooling2D(
-        (3, 3), strides=(
-            2, 2), padding='same', name='block13_pool')(x)
-    x = Add()([x, residual])
-
-    x = SeparableConv2D(1536, (3, 3), padding='same',
-                        use_bias=False, name='block14_sepconv1')(x)
-    x = BatchNormalization(name='block14_sepconv1_bn')(x)
-    x = Activation('relu', name='block14_sepconv1_act')(x)
-
-    x = SeparableConv2D(2048, (3, 3), padding='same',
-                        use_bias=False, name='block14_sepconv2')(x)
-    x = BatchNormalization(name='block14_sepconv2_bn')(x)
-    x = Activation('relu', name='block14_sepconv2_act')(x)
-
-    x = GlobalAveragePooling2D(name='avg_pool')(x)
-    x = Dropout(dropout_prob)(x)
-    x = Dense(classes, activation='softmax', name='predictions')(x)
-
-    model = Model(inputs=flow_input, outputs=x)
-
-    if weights == 'imagenet':
-        xception = Xception(include_top=False, pooling='avg')
-        for old_layer, new_layer in zip(xception.layers[2:], model.layers[2:]):
-            new_layer.set_weights(old_layer.get_weights())
-        first_conv_weights = xception.layers[1].get_weights()[0]
-
-    elif weights == 'spatial_stream':
-        xception = load_model('checkpoint/ucf101_spatial_stream.hdf5')
-        for old_layer, new_layer in zip(xception.layers[4:], model.layers[2:]):
-            new_layer.set_weights(old_layer.get_weights())
-        first_conv_weights = xception.layers[3].get_weights()[0]
-
-    first_conv_weights = np.average(first_conv_weights, axis=2)
-    first_conv_weights = np.reshape(
-        first_conv_weights,
-        (first_conv_weights.shape[0],
-         first_conv_weights.shape[1],
-         1,
-         first_conv_weights.shape[2]))
-    first_conv_weights = np.dstack([first_conv_weights] * input_shape[2])
-    model.layers[1].set_weights([first_conv_weights])
+        input_shape, classes, weights, base_model='Xception', dropout_prob=0.7, partial_bn=True):
+    """
+    Motion stream of the Temporal Segment Networks (https://arxiv.org/pdf/1705.02953.pdf).
+    """
+    # Define the base conv net and enable partial batch
+    # normalization strategy
+    models_dict = dict(getmembers(flows_applications, isfunction))
+    base = models_dict[base_model](include_top=False, weights=weights,  
+                                   input_shape=input_shape, pooling='avg')
     if partial_bn:
         num_bn_layers = 0
-        for layer in model.layers:
+        for layer in base.layers:
             if isinstance(layer, BatchNormalization):
                 num_bn_layers += 1
                 if num_bn_layers != 1:
                     layer.trainable = False
-
+    
+    output = Dense(classes, activation='softmax')(base.layers[-1].output)
+    model = Model(base.input, output)
     return model
