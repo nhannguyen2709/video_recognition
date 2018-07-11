@@ -82,9 +82,14 @@ def VGG19_GRU(
         frames_input_shape,
         poses_input_shape,
         classes):
+    """
+    Two-stream (RGB - 2D human poses) network, sharing weights of the bottom GRU layers to model temporal dynamics of actions.
+    """
+    # Input layers
     frames = Input(shape=frames_input_shape, name='frames')
     poses = Input(poses_input_shape, name='poses')
 
+    # Block 1
     frames_features = TimeDistributed(
         Conv2D(
             64,
@@ -103,6 +108,8 @@ def VGG19_GRU(
             name='block1_conv2'))(frames_features)
     frames_features = TimeDistributed(MaxPooling2D(
         (2, 2), strides=(2, 2), name='block1_pool'))(frames_features)
+
+    # Block 2
     frames_features = TimeDistributed(
         Conv2D(
             128,
@@ -121,6 +128,8 @@ def VGG19_GRU(
             name='block2_conv2'))(frames_features)
     frames_features = TimeDistributed(MaxPooling2D(
         (2, 2), strides=(2, 2), name='block2_pool'))(frames_features)
+
+    # Block 3
     frames_features = TimeDistributed(
         Conv2D(
             256,
@@ -155,6 +164,8 @@ def VGG19_GRU(
             name='block3_conv4'))(frames_features)
     frames_features = TimeDistributed(MaxPooling2D(
         (2, 2), strides=(2, 2), name='block3_pool'))(frames_features)
+
+    # Block 4
     frames_features = TimeDistributed(
         Conv2D(
             512,
@@ -189,6 +200,8 @@ def VGG19_GRU(
             name='block4_conv4'))(frames_features)
     frames_features = TimeDistributed(MaxPooling2D(
         (2, 2), strides=(2, 2), name='block4_pool'))(frames_features)
+    
+    # Block 5
     frames_features = TimeDistributed(
         Conv2D(
             512,
@@ -223,6 +236,7 @@ def VGG19_GRU(
             name='block5_conv4'))(frames_features)
     frames_features = TimeDistributed(GlobalMaxPooling2D())(frames_features)
 
+    # GRU layers
     pose_gru = GRU(512, return_sequences=True,
                    recurrent_dropout=0.2, dropout=0.2)
     gru_1 = GRU(512, return_sequences=True,
