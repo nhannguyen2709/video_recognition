@@ -1,8 +1,6 @@
 import argparse
 import numpy as np
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 from keras.backend import tensorflow_backend as K
 from keras.callbacks import LearningRateScheduler, ModelCheckpoint, ReduceLROnPlateau
@@ -11,7 +9,7 @@ from optimizers import SGD
 from keras.utils import multi_gpu_model
 
 from dataloader.keras_data import UCF101Flows
-from keras_models import TemporalSegmentNetworks_MotionStream
+from keras_models import TSNs_MotionStream
 
 parser = argparse.ArgumentParser(
     description='Training the Temporal Segment Networks on UCF101 data')
@@ -47,6 +45,13 @@ parser.add_argument(
     help='maximum number of processes to spin up')
 
 
+def schedule(epoch, lr):
+    if epoch + 1 % 32 == 0:
+        return lr * 0.1
+    else:
+        return lr
+
+
 def train():
     global args
     args = parser.parse_args()
@@ -60,23 +65,22 @@ def train():
         batch_size=args.batch_size,
         shuffle=False)
 
-    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=np.sqrt(0.1),
-                                  min_lr=1e-6,
-                                  patience=2, verbose=1)
+    lr_scheduler = LearningRateScheduler(schedule=schedule)
     save_best = ModelCheckpoint(
         args.filepath,
         monitor='val_acc',
         verbose=1,
         save_best_only=True,
         mode='max')
-    callbacks = [save_best, reduce_lr]
+    
+    callbacks = [save_best, lr_scheduler]
     lr_multipliers = {}
     lr_multipliers['block1_conv1/kernel:0'] = 10
 
     if os.path.exists(args.filepath):
         model = load_model(args.filepath)
     else:        
-        model = TemporalSegmentNetworks_MotionStream(
+        model = TSNs_MotionStream(
             input_shape=(299, 299, 20), dropout_prob=0.7,
             classes=len(train_videos.labels))
     
@@ -92,4 +96,6 @@ def train():
 
 
 if __name__ == '__main__':
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
     train()
